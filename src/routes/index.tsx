@@ -29,18 +29,15 @@ export const router = createBrowserRouter([
         path: "login",
         lazy: lazyLoad(() => import("@/pages/login.page")),
       },
-
-      {
-        element: <AuthLayout />,
-        children: authRoutes,
-      },
-
-      {
-        path: "manager",
-        element: <DashboardLayout role="manager" />,
-        children: managerRoutes,
-      },
-
+      // {
+      //   element: <AuthLayout />,
+      //   children: authRoutes,
+      // },
+      // {
+      //   path: "manager",
+      //   element: <DashboardLayout role="manager" />,
+      //   children: managerRoutes,
+      // },
       {
         path: "admin",
         element: <DashboardLayout role="admin" />,
