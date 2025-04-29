@@ -33,7 +33,7 @@ export const Navbar = () => {
           </Link>
           <ThemeToggle />
           <Button size="sm" asChild>
-            <Link to="/login">로그인</Link>
+            <Link to="/auth">로그인</Link>
           </Button>
         </nav>
         <Sheet>
@@ -56,7 +56,7 @@ export const Navbar = () => {
             </Link>
             <ThemeToggle />
             <Button asChild>
-              <Link to="/login">로그인</Link>
+              <Link to="/auth">로그인</Link>
             </Button>
           </SheetContent>
         </Sheet>
