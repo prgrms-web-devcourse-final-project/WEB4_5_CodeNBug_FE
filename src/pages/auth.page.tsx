@@ -1,16 +1,16 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AuthForm } from "@/components/auth/auth-form";
+import { LoginForm } from "@/components/auth/login";
+import { SignupForm } from "@/components/auth/signup";
 import { useNavigate, useSearchParams } from "react-router";
 import { useLayoutEffect, useState } from "react";
 
-export default function AuthPage() {
+const AuthPage = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+
   const initialMode = params.get("mode") === "signup" ? "signup" : "login";
-  const [mode, setMode] = useState<"login" | "signup">(
-    initialMode as "login" | "signup"
-  );
+  const [mode, setMode] = useState<"login" | "signup">(initialMode);
 
   const changeMode = (next: "login" | "signup") => {
     setMode(next);
@@ -27,7 +27,7 @@ export default function AuthPage() {
   }, [params]);
 
   return (
-    <section className="flex h-[calc(100vh-4rem)] md:h-[calc(100vh-12rem)] items-center justify-center bg-muted/40 py-12">
+    <section className="flex h-full items-center justify-center bg-muted/40 py-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -43,17 +43,18 @@ export default function AuthPage() {
             <TabsTrigger value="login">로그인</TabsTrigger>
             <TabsTrigger value="signup">회원가입</TabsTrigger>
           </TabsList>
+
           <AnimatePresence mode="wait" initial={false}>
             {mode === "login" ? (
               <TabsContent key="login" value="login" forceMount>
                 <MotionWrapper>
-                  <AuthForm mode="login" />
+                  <LoginForm />
                 </MotionWrapper>
               </TabsContent>
             ) : (
               <TabsContent key="signup" value="signup" forceMount>
                 <MotionWrapper>
-                  <AuthForm mode="signup" />
+                  <SignupForm />
                 </MotionWrapper>
               </TabsContent>
             )}
@@ -62,7 +63,7 @@ export default function AuthPage() {
       </motion.div>
     </section>
   );
-}
+};
 
 const MotionWrapper = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -75,3 +76,5 @@ const MotionWrapper = ({ children }: { children: React.ReactNode }) => (
     {children}
   </motion.div>
 );
+
+export default AuthPage;
