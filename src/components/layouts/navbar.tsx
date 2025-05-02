@@ -2,13 +2,33 @@ import { NAV_ITEMS } from "@/constants/navbar";
 import { PropsWithChildren } from "react";
 import { Link, useLocation } from "react-router";
 import { Button } from "../ui/button";
-import { Menu } from "lucide-react";
+import { Loader2, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../ui/theme-toggle";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import { useMyInfo } from "@/services/query/user.query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { logout } from "@/services/auth.service";
+import { QUERY_KEY } from "@/lib/query/query-key";
+import { toast } from "sonner";
 
 export const Navbar = () => {
   const { pathname } = useLocation();
+
+  const { data: myInfo } = useMyInfo();
+
+  const queryClient = useQueryClient();
+
+  const { mutate: logoutMutation, isPending } = useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEY.USER.MY,
+        type: "all",
+      });
+    },
+    onError: () => toast.error("로그아웃에 실패하였습니다."),
+  });
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -32,9 +52,19 @@ export const Navbar = () => {
             판매자 센터
           </Link>
           <ThemeToggle />
-          <Button size="sm" asChild>
-            <Link to="/auth">로그인</Link>
-          </Button>
+          {myInfo ? (
+            <Button size="sm" onClick={() => logoutMutation()}>
+              {isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                "로그아웃"
+              )}
+            </Button>
+          ) : (
+            <Button size="sm" asChild>
+              <Link to="/auth">로그인</Link>
+            </Button>
+          )}
         </nav>
         <Sheet>
           <SheetTrigger asChild className="lg:hidden">

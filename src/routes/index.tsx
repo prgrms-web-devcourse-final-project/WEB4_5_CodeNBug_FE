@@ -4,6 +4,7 @@ import { authRoutes } from "./auth.route";
 import { managerRoutes } from "./manager.route";
 import { adminRoutes } from "./admin.route";
 import { AuthLayout, DashboardLayout, RootLayout } from "@/layouts";
+import { authGuardLoader } from "@/pages/auth.page";
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       {
         path: "auth",
         lazy: lazyLoad(() => import("@/pages/auth.page")),
+        loader: authGuardLoader,
       },
       // {
       //   element: <AuthLayout />,

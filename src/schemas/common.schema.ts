@@ -1,9 +1,9 @@
 import { z, ZodTypeAny } from "zod";
 
-export const apiSuccess = <S extends ZodTypeAny>(data: S) =>
+export const apiSuccess = <S extends ZodTypeAny = z.ZodUnknown>(schema?: S) =>
   z.object({
     code: z.string(),
-    data,
+    data: (schema ?? z.unknown()).optional(),
     msg: z.string().optional(),
   });
 
@@ -12,9 +12,9 @@ export const apiFail = z.object({
   msg: z.string(),
 });
 
-export const apiResponse = <S extends ZodTypeAny>(schema: S) =>
+export const apiResponse = <S extends ZodTypeAny = z.ZodUnknown>(schema?: S) =>
   z.union([apiSuccess(schema), apiFail]);
 
-export type ApiResponse<T extends ZodTypeAny> = z.infer<
-  ReturnType<typeof apiResponse<T>>
+export type ApiResponse<S extends ZodTypeAny = z.ZodUnknown> = z.infer<
+  ReturnType<typeof apiResponse<S>>
 >;

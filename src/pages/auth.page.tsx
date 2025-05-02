@@ -2,8 +2,16 @@ import { AnimatePresence, motion } from "motion/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "@/components/auth/login";
 import { SignupForm } from "@/components/auth/signup";
-import { useNavigate, useSearchParams } from "react-router";
+import {
+  LoaderFunction,
+  redirect,
+  useNavigate,
+  useSearchParams,
+} from "react-router";
 import { useLayoutEffect, useState } from "react";
+import { getMyInfo } from "@/services/user.service";
+import { ResMyInfo } from "@/schemas/user.schema";
+import axios from "axios";
 
 const AuthPage = () => {
   const [params] = useSearchParams();
@@ -76,5 +84,27 @@ const MotionWrapper = ({ children }: { children: React.ReactNode }) => (
     {children}
   </motion.div>
 );
+
+export const authGuardLoader: LoaderFunction = async () => {
+  try {
+    const { data: res } = await getMyInfo();
+
+    const parsed = ResMyInfo.safeParse(res);
+    if (!parsed.success) {
+      return null;
+    }
+
+    if ("data" in parsed.data) {
+      throw redirect("/");
+    }
+
+    return null;
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      return null;
+    }
+    throw err;
+  }
+};
 
 export default AuthPage;

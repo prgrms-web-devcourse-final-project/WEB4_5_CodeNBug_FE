@@ -17,6 +17,7 @@ import { loginPayloadSchema, LoginPayloadType } from "@/schemas/auth.schema";
 import { useMutation } from "@tanstack/react-query";
 import { login } from "@/services/auth.service";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export const LoginForm = () => {
   const router = useNavigate();
@@ -29,11 +30,15 @@ export const LoginForm = () => {
     },
   });
 
-  const { mutate: loginMutation } = useMutation({
+  const { mutate: loginMutation, isPending } = useMutation({
     mutationFn: (payload: LoginPayloadType) => login(payload),
     onSuccess: (res) => {
       toast.success(res.data.msg ?? "회원가입 성공");
       router("/");
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error("로그인에 실패하였습니다.");
     },
   });
 
@@ -74,7 +79,7 @@ export const LoginForm = () => {
         />
 
         <Button type="submit" className="w-full">
-          로그인
+          {isPending ? <Loader2 className="size-4 animate-spin" /> : "로그인"}
         </Button>
 
         <div className="space-y-4 pt-4">

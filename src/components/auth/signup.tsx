@@ -28,6 +28,7 @@ import { signup } from "@/services/auth.service";
 import { useCallback } from "react";
 import { formatPhone } from "@/lib/utils";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export const SignupForm = () => {
   const router = useNavigate();
@@ -45,7 +46,7 @@ export const SignupForm = () => {
     } as unknown as SignupPayloadType,
   });
 
-  const { mutate: signupMutation } = useMutation({
+  const { mutate: signupMutation, isPending } = useMutation({
     mutationFn: (payload: SignupPayloadType) => signup(payload),
     onSuccess: (res) => {
       toast.success(res.data.msg ?? "회원가입 성공");
@@ -199,7 +200,7 @@ export const SignupForm = () => {
         />
 
         <Button type="submit" className="w-full">
-          회원가입
+          {isPending ? <Loader2 className="size-4 animate-spin" /> : "회원가입"}
         </Button>
 
         <div className="space-y-4 pt-4">
