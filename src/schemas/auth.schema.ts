@@ -55,5 +55,10 @@ export const loginPayloadSchema = z.object({
     .string()
     .nonempty({ message: "비밀번호는 필수 입력 항목입니다." }),
 });
-
 export type LoginPayloadType = z.infer<typeof loginPayloadSchema>;
+
+export const loginResponseSchmea = z.object({
+  tokenType: z.string(),
+});
+export const ResLogin = apiResponse(loginResponseSchmea);
+export type ResLoginType = z.infer<typeof ResLogin>;

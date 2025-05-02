@@ -49,7 +49,12 @@ export const SignupForm = () => {
     mutationFn: (payload: SignupPayloadType) => signup(payload),
     onSuccess: (res) => {
       toast.success(res.data.msg ?? "회원가입 성공");
+      form.reset();
       router("/auth?mode=login");
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error("회원가입에 실패하였습니다.");
     },
   });
 

@@ -1,4 +1,9 @@
-import { ResSignupType, SignupPayloadType } from "@/schemas/auth.schema";
+import {
+  LoginPayloadType,
+  ResLoginType,
+  ResSignupType,
+  SignupPayloadType,
+} from "@/schemas/auth.schema";
 import { axiosInstance } from "./api";
 
 export const signup = async (payload: SignupPayloadType) => {
@@ -6,4 +11,8 @@ export const signup = async (payload: SignupPayloadType) => {
     ...payload,
     age: +payload.age,
   });
+};
+
+export const login = async (payload: LoginPayloadType) => {
+  return await axiosInstance.post<ResLoginType>("/users/login", payload);
 };

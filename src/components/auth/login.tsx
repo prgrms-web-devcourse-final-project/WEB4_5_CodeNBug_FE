@@ -12,10 +12,15 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Separator } from "@radix-ui/react-dropdown-menu";
 import { OAuthButton } from "./oauth-button";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { loginPayloadSchema, LoginPayloadType } from "@/schemas/auth.schema";
+import { useMutation } from "@tanstack/react-query";
+import { login } from "@/services/auth.service";
+import { toast } from "sonner";
 
 export const LoginForm = () => {
+  const router = useNavigate();
+
   const form = useForm<LoginPayloadType>({
     resolver: zodResolver(loginPayloadSchema),
     defaultValues: {
@@ -24,9 +29,15 @@ export const LoginForm = () => {
     },
   });
 
-  const handleSubmit = (data: LoginPayloadType) => {
-    console.log("login", data);
-  };
+  const { mutate: loginMutation } = useMutation({
+    mutationFn: (payload: LoginPayloadType) => login(payload),
+    onSuccess: (res) => {
+      toast.success(res.data.msg ?? "회원가입 성공");
+      router("/");
+    },
+  });
+
+  const handleSubmit = (data: LoginPayloadType) => loginMutation(data);
 
   return (
     <Form {...form}>
