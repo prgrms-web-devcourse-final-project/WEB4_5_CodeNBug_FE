@@ -14,10 +14,11 @@ import { Separator } from "@radix-ui/react-dropdown-menu";
 import { OAuthButton } from "./oauth-button";
 import { Link, useNavigate } from "react-router";
 import { loginPayloadSchema, LoginPayloadType } from "@/schemas/auth.schema";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { login } from "@/services/auth.service";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { QUERY_KEY } from "@/lib/query/query-key";
 
 export const LoginForm = () => {
   const router = useNavigate();
@@ -30,9 +31,14 @@ export const LoginForm = () => {
     },
   });
 
+  const queryClient = useQueryClient();
+
   const { mutate: loginMutation, isPending } = useMutation({
     mutationFn: (payload: LoginPayloadType) => login(payload),
     onSuccess: (res) => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEY.USER.MY,
+      });
       toast.success(res.data.msg ?? "회원가입 성공");
       router("/");
     },

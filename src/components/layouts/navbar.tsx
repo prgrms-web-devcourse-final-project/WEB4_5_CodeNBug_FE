@@ -22,10 +22,8 @@ export const Navbar = () => {
   const { mutate: logoutMutation, isPending } = useMutation({
     mutationFn: logout,
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEY.USER.MY,
-        type: "all",
-      });
+      queryClient.removeQueries({ queryKey: QUERY_KEY.USER.MY });
+      toast.success("로그아웃 되었습니다.");
     },
     onError: () => toast.error("로그아웃에 실패하였습니다."),
   });
