@@ -1,3 +1,5 @@
+"use client";
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -11,33 +13,55 @@ import {
 import { Separator } from "@radix-ui/react-dropdown-menu";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "../ui/select";
 import { OAuthButton } from "./oauth-button";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { signupPayloadSchema, SignupPayloadType } from "@/schemas/auth.schema";
 import { useMutation } from "@tanstack/react-query";
 import { signup } from "@/services/auth.service";
+import { useCallback } from "react";
+import { formatPhone } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const SignupForm = () => {
+  const router = useNavigate();
+
   const form = useForm<SignupPayloadType>({
     resolver: zodResolver(signupPayloadSchema),
     defaultValues: {
       email: "",
       password: "",
       name: "",
-      age: 0,
+      age: "",
       sex: "",
       phoneNum: "",
       location: "",
-    },
+    } as unknown as SignupPayloadType,
   });
 
   const { mutate: signupMutation } = useMutation({
     mutationFn: (payload: SignupPayloadType) => signup(payload),
+    onSuccess: (res) => {
+      toast.success(res.data.msg ?? "회원가입 성공");
+      router("/auth?mode=login");
+    },
   });
 
-  const handleSubmit = (data: SignupPayloadType) => {
-    signupMutation(data);
-  };
+  const handleSubmit = (data: SignupPayloadType) => signupMutation(data);
+
+  const handleNumericChange = useCallback(
+    (onChange: (v: string) => void) =>
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange(e.target.value.replace(/\D/g, ""));
+      },
+    []
+  );
 
   return (
     <Form {...form}>
@@ -95,11 +119,12 @@ export const SignupForm = () => {
               <FormLabel>나이</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  min={0}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d*"
                   placeholder="25"
                   {...field}
-                  onChange={(e) => field.onChange(+e.target.value)}
+                  onChange={handleNumericChange(field.onChange)}
                 />
               </FormControl>
               <FormMessage />
@@ -113,9 +138,24 @@ export const SignupForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>성별</FormLabel>
-              <FormControl>
-                <Input placeholder="남 / 여 / 기타" {...field} />
-              </FormControl>
+              <Select defaultValue={field.value} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger className="w-full cursor-pointer">
+                    <SelectValue placeholder="선택" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem className="cursor-pointer" value="남">
+                    남
+                  </SelectItem>
+                  <SelectItem className="cursor-pointer" value="여">
+                    여
+                  </SelectItem>
+                  <SelectItem className="cursor-pointer" value="기타">
+                    기타
+                  </SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -128,7 +168,11 @@ export const SignupForm = () => {
             <FormItem>
               <FormLabel>휴대폰 번호</FormLabel>
               <FormControl>
-                <Input placeholder="010-1234-5678" {...field} />
+                <Input
+                  placeholder="010-1234-5678"
+                  {...field}
+                  onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -155,8 +199,8 @@ export const SignupForm = () => {
 
         <div className="space-y-4 pt-4">
           <Separator />
-          <OAuthButton provider="kakao" href={"OAUTH_ENDPOINTS.kakao"} />
-          <OAuthButton provider="google" href={"OAUTH_ENDPOINTS.google"} />
+          <OAuthButton provider="kakao" />
+          <OAuthButton provider="google" />
         </div>
 
         <p className="text-center text-sm text-muted-foreground">

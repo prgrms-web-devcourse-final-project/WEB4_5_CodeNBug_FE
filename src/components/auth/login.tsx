@@ -13,10 +13,10 @@ import { Button } from "../ui/button";
 import { Separator } from "@radix-ui/react-dropdown-menu";
 import { OAuthButton } from "./oauth-button";
 import { Link } from "react-router";
-import { loginPayloadSchema, LoginPayloadSchema } from "@/schemas/auth.schema";
+import { loginPayloadSchema, LoginPayloadType } from "@/schemas/auth.schema";
 
 export const LoginForm = () => {
-  const form = useForm<LoginPayloadSchema>({
+  const form = useForm<LoginPayloadType>({
     resolver: zodResolver(loginPayloadSchema),
     defaultValues: {
       email: "",
@@ -24,7 +24,7 @@ export const LoginForm = () => {
     },
   });
 
-  const handleSubmit = (data: LoginPayloadSchema) => {
+  const handleSubmit = (data: LoginPayloadType) => {
     console.log("login", data);
   };
 
@@ -68,8 +68,8 @@ export const LoginForm = () => {
 
         <div className="space-y-4 pt-4">
           <Separator />
-          <OAuthButton provider="kakao" href={"OAUTH_ENDPOINTS.kakao"} />
-          <OAuthButton provider="google" href={"OAUTH_ENDPOINTS.google"} />
+          <OAuthButton provider="kakao" />
+          <OAuthButton provider="google" />
         </div>
 
         <p className="text-center text-sm text-muted-foreground">

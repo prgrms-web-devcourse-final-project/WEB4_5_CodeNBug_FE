@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
+import { axiosInstance } from "@/services/api";
 
 interface OAuthButtonProps {
   provider: "kakao" | "google";
-  href: string;
 }
 
 const providerStyle: Record<OAuthButtonProps["provider"], string> = {
@@ -18,17 +18,22 @@ const providerLabel: Record<OAuthButtonProps["provider"], string> = {
   google: "Google로 계속하기",
 };
 
-export const OAuthButton = ({ provider, href }: OAuthButtonProps) => (
-  <Button
-    asChild
-    variant="outline"
-    className={cn("w-full", providerStyle[provider])}
-  >
-    <a href={href}>
+export const OAuthButton = ({ provider }: OAuthButtonProps) => {
+  const oauthLoginHandler = async () => {
+    return await axiosInstance.get(`/api/v1/auth/${provider}`);
+  };
+
+  return (
+    <Button
+      asChild
+      variant="outline"
+      className={cn("w-full", providerStyle[provider])}
+      onClick={oauthLoginHandler}
+    >
       <span className="inline-flex items-center justify-center gap-2">
         <span className={`i-simple-icons-${provider} text-xl`} />
         {providerLabel[provider]}
       </span>
-    </a>
-  </Button>
-);
+    </Button>
+  );
+};
