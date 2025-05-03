@@ -1,6 +1,6 @@
 import { QUERY_KEY } from "@/lib/query/query-key";
-import { useQuery } from "@tanstack/react-query";
-import { getMyInfo } from "../user.service";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getMyInfo, updateMyInfo } from "../user.service";
 import { getMyInfoResponseSchema } from "@/schemas/user.schema";
 import { z } from "zod";
 import { isSuccess } from "@/lib/response";
@@ -18,3 +18,14 @@ export const useMyInfo = () =>
       return undefined;
     },
   });
+
+export const useUpdateMyInfo = () => {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateMyInfo,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY.USER.MY });
+    },
+  });
+};

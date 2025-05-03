@@ -13,6 +13,7 @@ export const getMyInfoResponseSchema = z.object({
   modifiedAt: z.string(),
   role: z.enum(["ROLE_USER", "ROLE_ADMIN", "ROLE_MANAGER"]),
 });
+export type MyInfoType = z.infer<typeof getMyInfoResponseSchema>;
 
 export const ResMyInfo = apiResponse(getMyInfoResponseSchema);
 export type ResMyInfoType = z.infer<typeof ResMyInfo>;

@@ -1,10 +1,14 @@
 import { lazyLoad } from "@/lib/lazy";
 import { createBrowserRouter } from "react-router";
 import { authRoutes } from "./auth.route";
-import { managerRoutes } from "./manager.route";
 import { adminRoutes } from "./admin.route";
-import { AuthLayout, DashboardLayout, RootLayout } from "@/layouts";
-import { authGuardLoader } from "@/pages/auth.page";
+import {
+  AuthLayout,
+  DashboardLayout,
+  RootLayout,
+  requireAuthLoader,
+} from "@/layouts";
+import { requireUnauthLoader } from "@/pages/auth.page";
 
 export const router = createBrowserRouter([
   {
@@ -29,12 +33,13 @@ export const router = createBrowserRouter([
       {
         path: "auth",
         lazy: lazyLoad(() => import("@/pages/auth.page")),
-        loader: authGuardLoader,
+        loader: requireUnauthLoader,
       },
-      // {
-      //   element: <AuthLayout />,
-      //   children: authRoutes,
-      // },
+      {
+        element: <AuthLayout />,
+        children: authRoutes,
+        loader: requireAuthLoader,
+      },
       // {
       //   path: "manager",
       //   element: <DashboardLayout role="manager" />,

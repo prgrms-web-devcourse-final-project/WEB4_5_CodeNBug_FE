@@ -9,9 +9,7 @@ import {
   useSearchParams,
 } from "react-router";
 import { useLayoutEffect, useState } from "react";
-import { getMyInfo } from "@/services/user.service";
-import { ResMyInfo } from "@/schemas/user.schema";
-import axios from "axios";
+import { fetchSession } from "@/services/fetch-session";
 
 const AuthPage = () => {
   const [params] = useSearchParams();
@@ -85,26 +83,10 @@ const MotionWrapper = ({ children }: { children: React.ReactNode }) => (
   </motion.div>
 );
 
-export const authGuardLoader: LoaderFunction = async () => {
-  try {
-    const { data: res } = await getMyInfo();
-
-    const parsed = ResMyInfo.safeParse(res);
-    if (!parsed.success) {
-      return null;
-    }
-
-    if ("data" in parsed.data) {
-      throw redirect("/");
-    }
-
-    return null;
-  } catch (err) {
-    if (axios.isAxiosError(err) && err.response?.status === 401) {
-      return null;
-    }
-    throw err;
-  }
+export const requireUnauthLoader: LoaderFunction = async () => {
+  const me = await fetchSession();
+  if (me) throw redirect("/");
+  return null;
 };
 
 export default AuthPage;

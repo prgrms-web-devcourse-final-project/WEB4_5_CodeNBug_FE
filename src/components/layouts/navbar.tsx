@@ -1,6 +1,6 @@
 import { NAV_ITEMS } from "@/constants/navbar";
 import { PropsWithChildren } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { Button } from "../ui/button";
 import { Loader2, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 export const Navbar = () => {
   const { pathname } = useLocation();
+  const router = useNavigate();
 
   const { data: myInfo } = useMyInfo();
 
@@ -24,6 +25,7 @@ export const Navbar = () => {
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: QUERY_KEY.USER.MY });
       toast.success("로그아웃 되었습니다.");
+      router("/");
     },
     onError: () => toast.error("로그아웃에 실패하였습니다."),
   });
