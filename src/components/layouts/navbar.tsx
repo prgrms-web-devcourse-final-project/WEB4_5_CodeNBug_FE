@@ -11,6 +11,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { logout } from "@/services/auth.service";
 import { QUERY_KEY } from "@/lib/query/query-key";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "../ui/avatar";
 
 export const Navbar = () => {
   const { pathname } = useLocation();
@@ -53,13 +60,30 @@ export const Navbar = () => {
           </Link>
           <ThemeToggle />
           {myInfo ? (
-            <Button size="sm" onClick={() => logoutMutation()}>
-              {isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                "로그아웃"
-              )}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="cursor-pointer" asChild>
+                <Avatar className="mx-auto md:mx-0 shrink-0 size-8 rounded-full border">
+                  <AvatarFallback className="w-full h-full flex items-center justify-center bg-muted text-4xl font-bold select-none">
+                    {myInfo?.name.slice(0, 1)}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link to="/my">마이페이지</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => logoutMutation()}
+                >
+                  {isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    "로그아웃"
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Button size="sm" asChild>
               <Link to="/auth">로그인</Link>

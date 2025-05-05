@@ -9,10 +9,12 @@ import {
   requireAuthLoader,
 } from "@/layouts";
 import { requireUnauthLoader } from "@/pages/auth.page";
+import { RouteErrorPage } from "@/pages/not-found";
 
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         index: true,
@@ -49,11 +51,6 @@ export const router = createBrowserRouter([
         path: "admin",
         element: <DashboardLayout role="admin" />,
         children: adminRoutes,
-      },
-
-      {
-        path: "*",
-        lazy: lazyLoad(() => import("@/pages/not-found")),
       },
     ],
   },
