@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { axiosInstance } from "@/services/api";
+import axios from "axios";
 
 interface OAuthButtonProps {
   provider: "kakao" | "google";
@@ -20,7 +20,16 @@ const providerLabel: Record<OAuthButtonProps["provider"], string> = {
 
 export const OAuthButton = ({ provider }: OAuthButtonProps) => {
   const oauthLoginHandler = async () => {
-    return await axiosInstance.get(`/api/v1/auth/${provider}`);
+    return await axios.get(
+      `${
+        import.meta.env.MODE === "development"
+          ? "/auth-api"
+          : import.meta.env.VITE_SERVER_URL
+      }/auth/${provider}`,
+      {
+        withCredentials: true,
+      }
+    );
   };
 
   return (

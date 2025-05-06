@@ -23,6 +23,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        "/auth-api": {
+          target: VITE_SERVER_URL,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/auth-api/, ""),
+        },
       },
     },
   };

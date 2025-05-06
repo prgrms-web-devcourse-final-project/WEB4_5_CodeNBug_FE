@@ -1,7 +1,17 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Loader2, MailCheck, Send } from "lucide-react";
+
+import { signupPayloadSchema, SignupPayloadType } from "@/schemas/auth.schema";
+import { sendEmail, signup, verifyEmail } from "@/services/auth.service";
+import { formatPhone } from "@/lib/utils";
+
 import {
   Form,
   FormControl,
@@ -10,28 +20,25 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { Separator } from "@radix-ui/react-dropdown-menu";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import {
   Select,
   SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectValue,
 } from "../ui/select";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
+import { Separator } from "../ui/separator";
 import { OAuthButton } from "./oauth-button";
-import { Link, useNavigate } from "react-router";
-import { signupPayloadSchema, SignupPayloadType } from "@/schemas/auth.schema";
-import { useMutation } from "@tanstack/react-query";
-import { signup } from "@/services/auth.service";
-import { useCallback } from "react";
-import { formatPhone } from "@/lib/utils";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 export const SignupForm = () => {
   const router = useNavigate();
+  const [otp, setOtp] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [counter, setCounter] = useState(0);
 
   const form = useForm<SignupPayloadType>({
     resolver: zodResolver(signupPayloadSchema),
@@ -46,27 +53,63 @@ export const SignupForm = () => {
     } as unknown as SignupPayloadType,
   });
 
-  const { mutate: signupMutation, isPending } = useMutation({
+  const emailValue = form.watch("email");
+
+  const { mutate: sendEmailMut, isPending: sendingCode } = useMutation({
+    mutationFn: () => sendEmail(emailValue),
+    onSuccess: () => {
+      toast.success("인증 메일이 전송되었습니다 ✉️");
+      setEmailSent(true);
+      setCounter(60);
+    },
+    onError: () => toast.error("메일 전송에 실패했습니다."),
+  });
+
+  const { mutate: verifyEmailMut, isPending: verifyingCode } = useMutation({
+    mutationFn: () => verifyEmail(emailValue, otp),
+    onSuccess: () => {
+      toast.success("이메일이 인증되었습니다");
+      setEmailVerified(true);
+    },
+    onError: () => toast.error("인증 코드가 올바르지 않습니다."),
+  });
+
+  const { mutate: signupMut, isPending: signingUp } = useMutation({
     mutationFn: (payload: SignupPayloadType) => signup(payload),
     onSuccess: (res) => {
       toast.success(res.data.msg ?? "회원가입 성공");
       form.reset();
       router("/auth?mode=login");
     },
-    onError: (err) => {
-      console.error(err);
-      toast.error("회원가입에 실패하였습니다.");
-    },
+    onError: () => toast.error("회원가입에 실패했습니다."),
   });
 
-  const handleSubmit = (data: SignupPayloadType) => signupMutation(data);
+  const handleSubmit = (data: SignupPayloadType) => signupMut(data);
 
   const handleNumericChange = useCallback(
     (onChange: (v: string) => void) =>
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange(e.target.value.replace(/\D/g, ""));
-      },
+      (e: React.ChangeEvent<HTMLInputElement>) =>
+        onChange(e.target.value.replace(/\D/g, "")),
     []
+  );
+
+  useEffect(() => {
+    if (!counter) return;
+    const id = setInterval(() => setCounter((s) => s - 1), 1000);
+    return () => clearInterval(id);
+  }, [counter]);
+
+  const canSendCode = useMemo(
+    () => !!emailValue && !sendingCode && counter === 0,
+    [emailValue, sendingCode, counter]
+  );
+  const canVerifyCode = useMemo(
+    () => emailSent && otp.length === 6 && !emailVerified && !verifyingCode,
+    [emailSent, otp, emailVerified, verifyingCode]
+  );
+  const canSignup = useMemo(
+    () => emailVerified && !signingUp,
+    [emailVerified, signingUp]
   );
 
   return (
@@ -95,13 +138,67 @@ export const SignupForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>이메일</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="name@example.com" {...field} />
-              </FormControl>
+              <div className="flex gap-2">
+                <FormControl className="flex-1">
+                  <Input
+                    type="email"
+                    placeholder="name@example.com"
+                    {...field}
+                  />
+                </FormControl>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!canSendCode}
+                  onClick={() => sendEmailMut()}
+                >
+                  {sendingCode ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Send className="size-4 mr-1" />
+                      {counter ? `${counter}s` : "코드 발송"}
+                    </>
+                  )}
+                </Button>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {emailSent && (
+          <div className="flex items-end gap-2">
+            <InputOTP
+              maxLength={6}
+              value={otp}
+              onChange={setOtp}
+              disabled={emailVerified}
+            >
+              <InputOTPGroup>
+                {[...Array(6)].map((_, i) => (
+                  <InputOTPSlot key={i} index={i} />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={!canVerifyCode}
+              onClick={() => verifyEmailMut()}
+            >
+              {verifyingCode ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : emailVerified ? (
+                <MailCheck className="size-4 text-green-600" />
+              ) : (
+                "코드 확인"
+              )}
+            </Button>
+          </div>
+        )}
 
         <FormField
           control={form.control}
@@ -151,15 +248,11 @@ export const SignupForm = () => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem className="cursor-pointer" value="남">
-                    남
-                  </SelectItem>
-                  <SelectItem className="cursor-pointer" value="여">
-                    여
-                  </SelectItem>
-                  <SelectItem className="cursor-pointer" value="기타">
-                    기타
-                  </SelectItem>
+                  {["남", "여", "기타"].map((v) => (
+                    <SelectItem key={v} value={v} className="cursor-pointer">
+                      {v}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -199,8 +292,8 @@ export const SignupForm = () => {
           )}
         />
 
-        <Button type="submit" className="w-full">
-          {isPending ? <Loader2 className="size-4 animate-spin" /> : "회원가입"}
+        <Button type="submit" className="w-full" disabled={!canSignup}>
+          {signingUp ? <Loader2 className="size-4 animate-spin" /> : "회원가입"}
         </Button>
 
         <div className="space-y-4 pt-4">

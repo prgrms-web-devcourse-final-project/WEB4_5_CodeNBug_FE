@@ -21,3 +21,14 @@ export const login = async (payload: LoginPayloadType) => {
 export const logout = async () => {
   return await axiosInstance.post<ApiResponse>("/users/logout");
 };
+
+export const sendEmail = async (mail: string) => {
+  return await axiosInstance.post<ApiResponse>("/email/send", { mail });
+};
+
+export const verifyEmail = async (mail: string, verifyCode: string) => {
+  return await axiosInstance.post<ApiResponse>("/email/verify", {
+    mail,
+    verifyCode,
+  });
+};
