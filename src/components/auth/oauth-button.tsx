@@ -20,7 +20,7 @@ const providerLabel: Record<OAuthButtonProps["provider"], string> = {
 
 export const OAuthButton = ({ provider }: OAuthButtonProps) => {
   const oauthLoginHandler = async () => {
-    return await axios.get(
+    const { data } = await axios.get(
       `${
         import.meta.env.MODE === "development"
           ? "/auth-api"
@@ -28,8 +28,17 @@ export const OAuthButton = ({ provider }: OAuthButtonProps) => {
       }/auth/${provider}`,
       {
         withCredentials: true,
+        params: {
+          redirectUrl: `${
+            import.meta.env.VITE_CLIENT_URL
+          }/auth/${provider}/callback`,
+        },
       }
     );
+
+    if (data) {
+      window.location.href = data;
+    }
   };
 
   return (

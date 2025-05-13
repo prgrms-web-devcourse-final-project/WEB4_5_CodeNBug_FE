@@ -10,6 +10,8 @@ import {
 } from "@/layouts";
 import { requireUnauthLoader } from "@/pages/auth.page";
 import { RouteErrorPage } from "@/pages/not-found";
+import { managerRoute } from "./manager.route";
+import { ManagerLayout, requireManagerLoader } from "@/layouts/manager.layout";
 
 export const router = createBrowserRouter([
   {
@@ -29,6 +31,10 @@ export const router = createBrowserRouter([
         lazy: lazyLoad(() => import("@/pages/events/detail.page")),
       },
       {
+        path: "events/:eventId/book",
+        lazy: lazyLoad(() => import("@/pages/events/book.page")),
+      },
+      {
         path: "support",
         lazy: lazyLoad(() => import("@/pages/support.page")),
       },
@@ -38,19 +44,32 @@ export const router = createBrowserRouter([
         loader: requireUnauthLoader,
       },
       {
+        loader: requireUnauthLoader,
+        children: [
+          {
+            path: "auth/google/callback",
+            lazy: lazyLoad(() => import("@/pages/social/google.page")),
+          },
+          {
+            path: "auth/kakao/callback",
+            lazy: lazyLoad(() => import("@/pages/social/kakao.page")),
+          },
+        ],
+      },
+      {
         element: <AuthLayout />,
         children: authRoutes,
         loader: requireAuthLoader,
       },
-      // {
-      //   path: "manager",
-      //   element: <DashboardLayout role="manager" />,
-      //   children: managerRoutes,
-      // },
       {
         path: "admin",
         element: <DashboardLayout role="admin" />,
         children: adminRoutes,
+      },
+      {
+        element: <ManagerLayout />,
+        loader: requireManagerLoader,
+        children: managerRoute,
       },
     ],
   },

@@ -3,9 +3,11 @@ import {
   ResLoginType,
   ResSignupType,
   SignupPayloadType,
+  SocialLoginType,
 } from "@/schemas/auth.schema";
 import { axiosInstance } from "./api";
 import { ApiResponse } from "@/schemas/common.schema";
+import axios from "axios";
 
 export const signup = async (payload: SignupPayloadType) => {
   return await axiosInstance.post<ResSignupType>("/users/signup", {
@@ -31,4 +33,34 @@ export const verifyEmail = async (mail: string, verifyCode: string) => {
     mail,
     verifyCode,
   });
+};
+
+export const getCallback = async (
+  socialLoginType: "kakao" | "google",
+  code: string
+) => {
+  return await axios.get(
+    `${
+      import.meta.env.MODE === "development"
+        ? "/auth-api"
+        : import.meta.env.VITE_SERVER_URL
+    }/auth/${socialLoginType}/callback`,
+    {
+      params: {
+        code,
+        redirectUrl: import.meta.env.VITE_CLIENT_URL,
+      },
+    }
+  );
+};
+
+export const socialLogin = async (
+  socialId: string,
+  payload: SocialLoginType
+) => {
+  return await axiosInstance.post(`/sns/additional-info/${socialId}`, payload);
+};
+
+export const refreshAuth = async () => {
+  return await axiosInstance.post("/auth/refresh");
 };

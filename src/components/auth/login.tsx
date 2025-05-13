@@ -19,6 +19,7 @@ import { login } from "@/services/auth.service";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { QUERY_KEY } from "@/lib/query/query-key";
+import { AxiosError } from "axios";
 
 export const LoginForm = () => {
   const router = useNavigate();
@@ -43,8 +44,11 @@ export const LoginForm = () => {
       router("/");
     },
     onError: (err) => {
-      console.error(err);
-      toast.error("로그인에 실패하였습니다.");
+      if (err instanceof AxiosError) {
+        toast.error(err.response?.data.msg);
+      } else {
+        toast.error("로그인에 실패하였습니다.");
+      }
     },
   });
 

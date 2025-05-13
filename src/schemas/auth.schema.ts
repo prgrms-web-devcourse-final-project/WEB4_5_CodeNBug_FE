@@ -62,3 +62,22 @@ export const loginResponseSchmea = z.object({
 });
 export const ResLogin = apiResponse(loginResponseSchmea);
 export type ResLoginType = z.infer<typeof ResLogin>;
+
+/** 소셜 로그인 */
+export const socialLoginSchema = z.object({
+  age: z.string().regex(/^\d+$/, { message: "나이는 숫자만 입력해주세요." }),
+
+  sex: z.string().nonempty({ message: "성별은 필수 입력 항목입니다." }),
+
+  phoneNum: z
+    .string()
+    .nonempty({ message: "전화번호는 필수 입력 항목입니다." })
+    .regex(/^\d{3}-\d{3,4}-\d{4}$/, {
+      message: "전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)",
+    }),
+
+  location: z.string().nonempty({ message: "주소는 필수 입력 항목입니다." }),
+});
+export type SocialLoginType = z.infer<typeof socialLoginSchema>;
+export const ResSocialLogin = apiResponse(socialLoginSchema);
+export type ResSocialLoginType = z.infer<typeof ResSocialLogin>;

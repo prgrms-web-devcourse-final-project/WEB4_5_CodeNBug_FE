@@ -44,7 +44,7 @@ export const Navbar = () => {
           to="/"
           className="text-2xl font-extrabold tracking-tight text-primary"
         >
-          Code<span className="text-blue-600"> & </span>Bug
+          Ticket<span className="text-blue-600">On</span>
         </Link>
         <nav className="hidden lg:flex items-center gap-8">
           {NAV_ITEMS.map(({ label, path }) => (
@@ -63,7 +63,7 @@ export const Navbar = () => {
             <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer" asChild>
                 <Avatar className="mx-auto md:mx-0 shrink-0 size-8 rounded-full border">
-                  <AvatarFallback className="w-full h-full flex items-center justify-center bg-muted text-4xl font-bold select-none">
+                  <AvatarFallback className="w-full h-full flex items-center justify-center bg-muted text-xl font-bold select-none">
                     {myInfo?.name.slice(0, 1)}
                   </AvatarFallback>
                 </Avatar>
@@ -109,9 +109,27 @@ export const Navbar = () => {
               판매자 센터
             </Link>
             <ThemeToggle />
-            <Button asChild>
-              <Link to="/auth">로그인</Link>
-            </Button>
+            {myInfo ? (
+              <div className="flex flex-col gap-4">
+                <Button className="cursor-pointer">
+                  <Link to="/my">마이페이지</Link>
+                </Button>
+                <Button
+                  className="cursor-pointer"
+                  onClick={() => logoutMutation()}
+                >
+                  {isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    "로그아웃"
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" asChild>
+                <Link to="/auth">로그인</Link>
+              </Button>
+            )}
           </SheetContent>
         </Sheet>
       </div>
