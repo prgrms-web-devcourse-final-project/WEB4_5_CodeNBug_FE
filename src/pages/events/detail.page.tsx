@@ -2,26 +2,27 @@
 
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getAvailableSeat, getEvent } from "@/services/event.service";
+import { getEvent, getAvailableSeat } from "@/services/event.service";
 import { QUERY_KEY } from "@/lib/query/query-key";
 import { motion } from "motion/react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardHeader,
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useMemo } from "react";
 
 const DetailSkeleton = () => (
   <div className="container mx-auto px-4 py-10">
-    <Skeleton className="h-8 w-60 mb-6" />
+    <Skeleton className="mb-6 h-8 w-60" />
     <div className="grid gap-6 lg:grid-cols-2">
       <Skeleton className="h-80 w-full rounded-xl" />
       <div className="space-y-4">
@@ -29,7 +30,7 @@ const DetailSkeleton = () => (
         <Skeleton className="h-6 w-52" />
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-[1px] w-full" />
-        <Skeleton className="h-5 w-full" />
+        <Skeleton className="h-20 w-full" />
         <Skeleton className="h-14 w-full rounded-md" />
       </div>
     </div>
@@ -49,7 +50,7 @@ export const EventDetailPage = () => {
     queryKey: QUERY_KEY.EVENT.DETAIL(eventId!),
     queryFn: () => getEvent(eventId!),
     enabled: !!eventId,
-    select: (res) => res.data.data,
+    select: (res) => res.data,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -57,9 +58,16 @@ export const EventDetailPage = () => {
     queryKey: QUERY_KEY.EVENT.AVAILABLE(eventId!),
     queryFn: () => getAvailableSeat(eventId!),
     enabled: !!eventId,
-    select: (res) => res.data.data,
+    select: (res) => res.data,
     staleTime: 1000 * 60 * 5,
   });
+
+  const sortedPrices = useMemo(
+    () => [...(event?.data?.prices ?? [])].sort((a, b) => a.amount - b.amount),
+    [event?.data?.prices]
+  );
+  const minPrice = sortedPrices[0]?.amount ?? 0;
+  const maxPrice = sortedPrices.at(-1)?.amount ?? 0;
 
   if (isLoading) return <DetailSkeleton />;
 
@@ -79,6 +87,8 @@ export const EventDetailPage = () => {
     );
   }
 
+  if (!event.data) return null;
+
   const {
     information,
     bookingStart,
@@ -86,13 +96,14 @@ export const EventDetailPage = () => {
     viewCount,
     seatSelectable,
     status,
-  } = event;
+  } = event.data;
 
+  const now = new Date();
   const canBook =
     status === "OPEN" &&
     seatSelectable &&
-    new Date() >= new Date(bookingStart) &&
-    new Date() <= new Date(bookingEnd);
+    now >= new Date(bookingStart) &&
+    now <= new Date(bookingEnd);
 
   return (
     <motion.section
@@ -117,12 +128,14 @@ export const EventDetailPage = () => {
             />
           </CardHeader>
         </Card>
+
         <Card className="flex flex-col">
           <CardContent className="flex-1 space-y-4 p-6">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{information.hallName}</Badge>
+              <Badge variant="outline">{information.location}</Badge>
               <Badge variant={status === "OPEN" ? "default" : "outline"}>
-                {status === "OPEN" ? "예매 가능" : "예매 마감"}
+                {canBook ? "예매 가능" : "예매 불가능"}
               </Badge>
             </div>
 
@@ -141,23 +154,45 @@ export const EventDetailPage = () => {
             </p>
 
             <p className="text-sm text-muted-foreground">
-              관람 가능 연령:{" "}
+              가격:&nbsp;
+              {minPrice === maxPrice
+                ? `${minPrice.toLocaleString()}원`
+                : `${minPrice.toLocaleString()} ~ ${maxPrice.toLocaleString()}원`}
+            </p>
+            <ul className="flex flex-wrap gap-2">
+              {sortedPrices.map(({ id, grade, amount }) => (
+                <li
+                  key={id}
+                  className="px-2 py-[2px] rounded bg-primary/10 text-sm"
+                >
+                  {grade}: {amount.toLocaleString()}원
+                </li>
+              ))}
+            </ul>
+
+            <p className="text-sm text-muted-foreground">
+              좌석 수:&nbsp;{information.seatCount.toLocaleString()}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              관람 가능 연령:&nbsp;
               {information.ageLimit === 0
                 ? "전체"
                 : `${information.ageLimit}세 이상`}
             </p>
-
-            <p className="text-sm text-muted-foreground">조회수: {viewCount}</p>
             <p className="text-sm text-muted-foreground">
-              선택가능 좌석 수: {availableSeat?.available}
+              조회수:&nbsp;{viewCount.toLocaleString()}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              선택 가능 좌석:&nbsp;{availableSeat?.available ?? "-"}
             </p>
 
             <Separator className="my-2" />
-
-            <p className="text-base">
-              좌석 선택&nbsp;
-              {seatSelectable ? "가능" : "불가"}
-            </p>
+            <p className="whitespace-pre-wrap">{information.description}</p>
+            {information.restrictions && (
+              <p className="text-sm text-destructive/80">
+                * {information.restrictions}
+              </p>
+            )}
           </CardContent>
 
           <CardFooter className="p-6 pt-0">

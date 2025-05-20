@@ -1,3 +1,15 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/sse/:path*",
+      "destination": "https://api.queue.ticketone.site/api/v1/:path*"
+    },
+
+    {
+      "source": "/api/:path*",
+      "destination": "https://api.main.ticketone.site/api/:path*"
+    },
+
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

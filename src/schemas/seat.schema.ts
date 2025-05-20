@@ -9,3 +9,9 @@ export const SetSeatSchema = z.object({
 });
 export const ResSetSeatSchema = apiResponse(SetSeatSchema);
 export type ResSetSeatSchemaType = z.infer<typeof ResSetSeatSchema>;
+
+const SetSeatApiSchema = z.object({
+  seatList: z.array(z.number()),
+});
+export const ResSetSeatApiSchema = apiResponse(SetSeatApiSchema);
+export type ResSetSeatApiSchemaType = z.infer<typeof ResSetSeatApiSchema>;

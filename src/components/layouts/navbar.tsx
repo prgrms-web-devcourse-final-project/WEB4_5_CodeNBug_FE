@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "../ui/avatar";
+import { NotificationBell } from "../notification/bell";
 
 export const Navbar = () => {
   const { pathname } = useLocation();
@@ -52,12 +53,15 @@ export const Navbar = () => {
               {label}
             </NavLink>
           ))}
-          <Link
-            to="/manager"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            판매자 센터
-          </Link>
+          <NotificationBell />
+          {myInfo && myInfo.role === "ROLE_MANAGER" && (
+            <Link
+              to="/manager"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              판매자 센터
+            </Link>
+          )}
           <ThemeToggle />
           {myInfo ? (
             <DropdownMenu>
@@ -102,12 +106,14 @@ export const Navbar = () => {
                 {label}
               </Link>
             ))}
-            <Link
-              to="/manager"
-              className="text-lg font-medium text-muted-foreground"
-            >
-              판매자 센터
-            </Link>
+            {myInfo && myInfo.role === "ROLE_MANAGER" && (
+              <Link
+                to="/manager"
+                className="text-lg font-medium text-muted-foreground"
+              >
+                판매자 센터
+              </Link>
+            )}
             <ThemeToggle />
             {myInfo ? (
               <div className="flex flex-col gap-4">

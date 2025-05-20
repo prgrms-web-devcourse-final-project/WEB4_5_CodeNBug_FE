@@ -20,3 +20,11 @@ export const deleteManagerEvent = async (eventId: string) =>
 
 export const getManagerEvents = async () =>
   axiosInstance.get<ResManagerEvents>("/manager/events/me");
+
+export const getImageUrl = async (fileNames: string[]) => {
+  return await axiosInstance.post<{
+    data: { fileName: string; url: string }[];
+  }>("/images/url", {
+    fileNames,
+  });
+};

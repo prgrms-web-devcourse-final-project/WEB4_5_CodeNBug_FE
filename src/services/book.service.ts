@@ -1,9 +1,9 @@
-import { ResLayoutSchemaType } from "@/schemas/layout.schema";
+import { ResSeatLayoutSchemaType } from "@/schemas/layout.schema";
 import { axiosInstance } from "./api";
 import { ResSetSeatSchemaType } from "@/schemas/seat.schema";
 
 export const getSeats = async (eventId: string) => {
-  return await axiosInstance.get<ResLayoutSchemaType>(
+  return await axiosInstance.get<ResSeatLayoutSchemaType>(
     `/event/${eventId}/seats`
   );
 };

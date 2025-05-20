@@ -27,14 +27,6 @@ export const router = createBrowserRouter([
         lazy: lazyLoad(() => import("@/pages/events/list.page")),
       },
       {
-        path: "events/:eventId",
-        lazy: lazyLoad(() => import("@/pages/events/detail.page")),
-      },
-      {
-        path: "events/:eventId/book",
-        lazy: lazyLoad(() => import("@/pages/events/book.page")),
-      },
-      {
         path: "support",
         lazy: lazyLoad(() => import("@/pages/support.page")),
       },

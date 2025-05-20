@@ -22,4 +22,8 @@ export const QUERY_KEY = {
   MANAGER: {
     DEFAULT: [DOMAIN.MANAGER],
   },
+  NOTIFICATION: {
+    ALL: ["notification", "all"] as const,
+    UNREAD: ["notification", "unread"] as const,
+  },
 };

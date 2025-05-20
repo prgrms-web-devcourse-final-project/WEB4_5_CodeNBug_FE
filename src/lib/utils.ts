@@ -14,3 +14,8 @@ export const formatPhone = (value: string) => {
     digits.length - 4
   )}-${digits.slice(-4)}`;
 };
+
+export const createOrderId = (purchaseId: number) => {
+  const base = `ORD-${purchaseId}-${Date.now()}`;
+  return base.slice(0, 64);
+};

@@ -16,8 +16,12 @@ export const signup = async (payload: SignupPayloadType) => {
   });
 };
 
-export const login = async (payload: LoginPayloadType) => {
-  return await axiosInstance.post<ResLoginType>("/users/login", payload);
+export const login = async (payload: LoginPayloadType, domain?: string) => {
+  return await axiosInstance.post<ResLoginType>("/users/login", payload, {
+    params: {
+      domain,
+    },
+  });
 };
 
 export const logout = async () => {

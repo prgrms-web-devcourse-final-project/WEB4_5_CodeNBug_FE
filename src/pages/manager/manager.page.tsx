@@ -22,13 +22,13 @@ import {
   deleteManagerEvent,
   getManagerEvents,
 } from "@/services/manager.service";
-import { EventCreateDialog } from "@/components/manager/create-event";
 import {
   CreateEventPayload,
   UpdateEventPayload,
   ResManagerEvent,
 } from "@/schemas/manager.schema";
 import { QUERY_KEY } from "@/lib/query/query-key";
+import { EventCreateWizard } from "@/components/manager/event-create-wizard";
 
 export const ManagerPage = () => {
   const qc = useQueryClient();
@@ -128,9 +128,7 @@ export const ManagerPage = () => {
       layout
     >
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold dark:text-primary-foreground">
-          행사 관리
-        </h1>
+        <h1 className="text-2xl font-bold">행사 관리</h1>
         <Button
           onClick={() => {
             setEditing(null);
@@ -156,51 +154,53 @@ export const ManagerPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {events.map((ev) => (
-              <TableRow key={ev.eventId} className="h-16">
-                <TableCell className="font-medium">{ev.title}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{ev.type}</Badge>
-                </TableCell>
-                <TableCell>
-                  {format(ev.startDate, "yyyy-MM-dd HH:mm")} ~{" "}
-                  {format(ev.endDate, "HH:mm")}
-                </TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setEditing(ev);
-                      setOpen(true);
-                    }}
-                  >
-                    수정
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() =>
-                      handleDelete(String(ev.eventId ?? ev.eventId))
-                    }
-                    disabled={deleteMut.isPending}
-                  >
-                    삭제
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {events
+              .filter((ev) => !ev.isDeleted)
+              .map((ev) => (
+                <TableRow key={ev.eventId} className="h-16">
+                  <TableCell className="font-medium">{ev.title}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{ev.category}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {format(ev.startDate, "yyyy-MM-dd HH:mm")} ~{" "}
+                    {format(ev.endDate, "HH:mm")}
+                  </TableCell>
+                  <TableCell className="text-right space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditing(ev);
+                        setOpen(true);
+                      }}
+                    >
+                      수정
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() =>
+                        handleDelete(String(ev.eventId ?? ev.eventId))
+                      }
+                      disabled={deleteMut.isPending}
+                    >
+                      삭제
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       )}
 
-      <EventCreateDialog
+      <EventCreateWizard
+        initial={editing}
         open={open}
         onOpenChange={(o) => {
           if (!o) setEditing(null);
           setOpen(o);
         }}
-        initial={editing}
         onSubmit={(payload) => handleSubmit(payload, editing)}
       />
     </motion.section>

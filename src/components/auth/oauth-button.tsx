@@ -4,6 +4,7 @@ import axios from "axios";
 
 interface OAuthButtonProps {
   provider: "kakao" | "google";
+  disabled: boolean;
 }
 
 const providerStyle: Record<OAuthButtonProps["provider"], string> = {
@@ -18,7 +19,7 @@ const providerLabel: Record<OAuthButtonProps["provider"], string> = {
   google: "Google로 계속하기",
 };
 
-export const OAuthButton = ({ provider }: OAuthButtonProps) => {
+export const OAuthButton = ({ provider, disabled }: OAuthButtonProps) => {
   const oauthLoginHandler = async () => {
     const { data } = await axios.get(
       `${
@@ -44,8 +45,13 @@ export const OAuthButton = ({ provider }: OAuthButtonProps) => {
   return (
     <Button
       asChild
+      disabled={disabled}
       variant="outline"
-      className={cn("w-full", providerStyle[provider])}
+      className={cn(
+        "w-full",
+        providerStyle[provider],
+        disabled && "opacity-50 pointer-events-none"
+      )}
       onClick={oauthLoginHandler}
     >
       <span className="inline-flex items-center justify-center gap-2">
