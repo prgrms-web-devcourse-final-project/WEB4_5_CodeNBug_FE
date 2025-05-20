@@ -152,8 +152,8 @@ export const SocialForm = ({ code }: { code: string | null }) => {
 
         <div className="space-y-4 pt-4">
           <Separator />
-          <OAuthButton provider="kakao" />
-          <OAuthButton provider="google" />
+          <OAuthButton provider="kakao" disabled={false} />
+          <OAuthButton provider="google" disabled={false} />
         </div>
       </form>
     </Form>
