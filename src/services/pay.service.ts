@@ -9,7 +9,7 @@ export const initialPayments = async (
   return await axiosInstance.post<ResInitialPaymentsSchemaType>(
     `/payments/init`,
     {
-      eventId,
+      eventId: +eventId,
       amount,
     },
     { headers: { entryAuthToken } }

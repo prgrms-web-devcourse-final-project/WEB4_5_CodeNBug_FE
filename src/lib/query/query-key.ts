@@ -23,7 +23,10 @@ export const QUERY_KEY = {
     DEFAULT: [DOMAIN.MANAGER],
   },
   NOTIFICATION: {
-    ALL: ["notification", "all"] as const,
-    UNREAD: ["notification", "unread"] as const,
+    DEFAULT: ["notification"] as const,
+    ALL: (userId: number) => ["notification", "all", userId] as const,
+    UNREAD: (userId: number) => ["notification", "unread", userId] as const,
+    DETAIL: (userId: number, notiId: number) =>
+      ["notification", userId, notiId] as const,
   },
 };

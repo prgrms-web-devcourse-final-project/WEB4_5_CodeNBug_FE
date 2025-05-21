@@ -29,11 +29,15 @@ import {
 } from "@/schemas/manager.schema";
 import { QUERY_KEY } from "@/lib/query/query-key";
 import { EventCreateWizard } from "@/components/manager/event-create-wizard";
+import { NotificationCreateDrawer } from "@/components/manager/notification-create-drawer";
+import { createNotification } from "@/services/notification.service";
+import { toast } from "sonner";
 
 export const ManagerPage = () => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ResManagerEvent["data"] | null>(null);
+  const [openNotice, setOpenNotice] = useState(false);
 
   const {
     data: events = [],
@@ -45,6 +49,19 @@ export const ManagerPage = () => {
     queryFn: getManagerEvents,
     select: (res) => res.data.data ?? [],
     staleTime: 1000 * 60 * 5,
+  });
+
+  const noticeMut = useMutation({
+    mutationFn: createNotification,
+    onSuccess: () => {
+      toast.success("공지 발송 완료");
+      setOpenNotice(false);
+    },
+    onError: (err: unknown) => {
+      const msg =
+        err instanceof Error ? err.message : "공지 발송에 실패했습니다.";
+      toast.error(msg);
+    },
   });
 
   const createMut = useMutation({
@@ -128,15 +145,20 @@ export const ManagerPage = () => {
       layout
     >
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">행사 관리</h1>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-        >
-          + 행사 생성
-        </Button>
+        <h1 className="text-2xl font-bold">행사 관리</h1>{" "}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setOpenNotice(true)}>
+            공지 작성
+          </Button>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
+            + 행사 생성
+          </Button>
+        </div>
       </div>
 
       {events.length === 0 ? (
@@ -202,6 +224,11 @@ export const ManagerPage = () => {
           setOpen(o);
         }}
         onSubmit={(payload) => handleSubmit(payload, editing)}
+      />
+      <NotificationCreateDrawer
+        open={openNotice}
+        onOpenChange={setOpenNotice}
+        onSubmit={(p) => noticeMut.mutate(p)}
       />
     </motion.section>
   );

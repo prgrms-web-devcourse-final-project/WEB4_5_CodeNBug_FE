@@ -1,13 +1,12 @@
-"use client";
-import { useLayoutEffect, useEffect, useRef, useState, useId } from "react";
-import { useNavigate } from "react-router";
 import { motion } from "motion/react";
+import { useLayoutEffect, useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { useMutation } from "@tanstack/react-query";
 import {
-  loadPaymentWidget,
-  PaymentWidgetInstance,
-} from "@tosspayments/payment-widget-sdk";
-import { Ticket } from "lucide-react";
+  loadTossPayments,
+  type TossPaymentsPayment,
+} from "@tosspayments/tosspayments-sdk";
+import { Ticket, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
 import { Button } from "@/components/ui/button";
@@ -16,11 +15,9 @@ import { toast } from "sonner";
 import { usePaymentStore } from "@/store/payment.store";
 import { initialPayments } from "@/services/pay.service";
 import { createOrderId } from "@/lib/utils";
+import { useMyInfo } from "@/services/query/user.query";
 
-const EventPayPage = () => {
-  const widgetId = useId();
-  const agreementId = useId();
-
+export const EventPayPage = () => {
   const nav = useNavigate();
   const {
     eventId,
@@ -33,82 +30,66 @@ const EventPayPage = () => {
     orderId,
   } = usePaymentStore();
 
-  const { mutate: initPay, isPending } = useMutation({
+  const { data: myInfo } = useMyInfo();
+
+  const { mutate: initPay, isPending: preparing } = useMutation({
     mutationFn: () => initialPayments(eventId!, amount, eventAuthToken!),
     onSuccess: ({ data }) => {
       closeQueue?.();
-
-      if (data.data) {
-        const id = data.data.purchaseId;
-        const oid = createOrderId(id);
-
-        setPurchaseId(id);
-        setPaymentInfo({ purchaseId: id, orderId: oid });
-
-        toast.success("결제 위젯을 불러옵니다.");
-      }
+      const id = data.data!.purchaseId;
+      const oid = createOrderId(id);
+      setPaymentInfo({ purchaseId: id, orderId: oid });
+      setPurchaseId(id);
+      toast.success("결제 준비가 완료되었습니다.");
     },
-    onError: (err) =>
+    onError: (e) =>
       toast.error(
-        (err as Error)?.message ??
-          "결제 초기화에 실패했습니다. 다시 시도해 주세요."
+        (e as Error)?.message ?? "결제 준비에 실패했습니다. 다시 시도해 주세요."
       ),
   });
 
-  const widgetRef = useRef<HTMLDivElement>(null);
-  const agreementRef = useRef<HTMLDivElement>(null);
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
-  const paymentWidget = useRef<PaymentWidgetInstance>(null);
-  const [widgetReady, setWidgetReady] = useState(false);
+  const [payment, setPayment] = useState<TossPaymentsPayment | null>(null);
+  const ready = !!payment;
 
   useEffect(() => {
     if (!purchaseId) return;
 
-    const load = async () => {
-      const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY;
-      if (!clientKey) {
-        toast.error("Toss 클라이언트 키가 설정되지 않았습니다.");
-        return;
+    (async () => {
+      try {
+        const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY!;
+        const customerKey = localStorage.getItem("tossCustomerKey") || uuidv4();
+        localStorage.setItem("tossCustomerKey", customerKey);
+
+        const toss = await loadTossPayments(clientKey);
+        setPayment(toss.payment({ customerKey }));
+      } catch {
+        toast.error("토스 결제창 초기화에 실패했습니다.");
       }
-      const customerKey = localStorage.getItem("tossCustomerKey") || uuidv4();
-      localStorage.setItem("tossCustomerKey", customerKey);
+    })();
 
-      paymentWidget.current = await loadPaymentWidget(clientKey, customerKey);
-
-      paymentWidget.current!.renderPaymentMethods(
-        `#${widgetId}`,
-        { value: amount },
-        { variantKey: "DEFAULT" }
-      );
-
-      await paymentWidget.current.renderAgreement(`#${agreementId}`);
-
-      setWidgetReady(true);
-    };
-
-    load().catch(() => toast.error("토스 결제위젯을 로드하지 못했습니다."));
-
-    return () => {
-      setWidgetReady(false);
-      paymentWidget.current = null;
-    };
-  }, [purchaseId, amount, widgetId, agreementId]);
-
-  const handleRequestPayment = () => {
-    const widget = paymentWidget.current;
-    if (!widget || !orderId) return;
-
-    widget.requestPayment({
-      orderId: orderId,
-      orderName: `공연 예매 ${purchaseId}`,
-      successUrl: `${location.origin}/payments/success`,
-      failUrl: `${location.origin}/payments/fail`,
-    });
-  };
+    return () => setPayment(null);
+  }, [purchaseId]);
 
   useLayoutEffect(() => {
     if (!eventId || seatList.length === 0) nav(-1);
   }, [eventId, seatList, nav]);
+
+  const handleRequestPayment = () => {
+    if (!payment || !orderId) return;
+
+    payment.requestPayment({
+      method: "CARD",
+      amount: { value: amount, currency: "KRW" },
+      orderId,
+      orderName: `예매 ${purchaseId}`,
+      successUrl: `${location.origin}/payments/success`,
+      failUrl: `${location.origin}/payments/fail`,
+      customerName: myInfo?.name,
+      customerEmail: myInfo?.email,
+      card: { flowMode: "DEFAULT" },
+    });
+  };
 
   if (!eventId) return null;
 
@@ -129,7 +110,7 @@ const EventPayPage = () => {
               key={id}
               className="px-2 py-1 rounded bg-primary/10 text-sm font-medium"
             >
-              좌석 ID&nbsp;{id}
+              좌석&nbsp;{id}
             </li>
           ))}
         </ul>
@@ -141,18 +122,39 @@ const EventPayPage = () => {
 
       <Separator />
 
-      <div id={widgetId} ref={widgetRef} />
-      <div id={agreementId} ref={agreementRef} className="mt-4" />
+      {!purchaseId && (
+        <Button
+          size="lg"
+          variant="outline"
+          className="w-full flex items-center gap-2"
+          disabled={preparing}
+          onClick={() => initPay()}
+        >
+          {preparing ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              결제 준비 중…
+            </>
+          ) : (
+            <>
+              <Ticket size={18} />
+              결제 준비하기
+            </>
+          )}
+        </Button>
+      )}
 
-      <Button
-        size="lg"
-        className="w-full flex items-center gap-2"
-        disabled={isPending || (purchaseId !== null && !widgetReady)}
-        onClick={purchaseId ? handleRequestPayment : () => initPay()}
-      >
-        <Ticket size={18} />
-        {isPending ? "결제 준비 중…" : purchaseId ? "결제하기" : "결제 초기화"}
-      </Button>
+      {purchaseId && (
+        <Button
+          size="lg"
+          className="w-full flex items-center gap-2"
+          disabled={!ready}
+          onClick={handleRequestPayment}
+        >
+          <Ticket size={18} />
+          {ready ? "결제하기" : "결제창 불러오는 중…"}
+        </Button>
+      )}
 
       <Button
         variant="ghost"

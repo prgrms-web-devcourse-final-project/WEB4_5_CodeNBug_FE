@@ -23,6 +23,7 @@ import { AxiosError } from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Switch } from "../ui/switch";
 import { motion } from "motion/react";
+import { getMyInfo } from "@/services/user.service";
 
 const LOCK_KEY = "login-lock-until";
 const LOCK_DURATION_MS = 5 * 60 * 1_000;
@@ -68,8 +69,15 @@ export const LoginForm = () => {
 
   const { mutate: loginMutate, isPending } = useMutation({
     mutationFn: (payload: LoginPayloadType) => login(payload, domain),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY.USER.MY });
+    onSuccess: async (res) => {
+      await queryClient.prefetchQuery({
+        queryKey: QUERY_KEY.USER.MY,
+        queryFn: getMyInfo,
+      });
+      await queryClient.refetchQueries({
+        queryKey: QUERY_KEY.USER.MY,
+        type: "all",
+      });
       toast.success(res.data.msg ?? "로그인 성공");
       navigate("/");
     },

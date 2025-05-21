@@ -35,11 +35,6 @@ export default defineConfig(({ mode }) => {
           target: VITE_QUEUE_URL,
           changeOrigin: true,
           secure: false,
-          ws: false,
-          // @ts-expect-error no type
-          onProxyReq(proxyReq) {
-            proxyReq.setHeader("Accept", "text/event-stream");
-          },
           rewrite: (p) => p.replace(/^\/sse/, ""),
         },
       },

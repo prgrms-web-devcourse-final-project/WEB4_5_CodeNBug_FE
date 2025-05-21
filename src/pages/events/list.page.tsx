@@ -38,7 +38,8 @@ const CATEGORY_OPTIONS: EventCategory[] = [
 
 export const EventListPage = () => {
   const [params, setParams] = useSearchParams();
-  const page = Math.max(Number(params.get("page") ?? "1"), 1);
+  const uiPage = Math.max(Number(params.get("page") ?? "1"), 1);
+  const pageIdx = uiPage - 1;
   const size = Math.max(Number(params.get("size") ?? "8"), 1);
 
   const [range, setRange] = useState(DEFAULT_RANGE);
@@ -49,27 +50,27 @@ export const EventListPage = () => {
 
   const qc = useQueryClient();
   const { data, isLoading, isError, isFetching, error } = useQuery({
-    queryKey: ["events", page, size, dRange, dCats],
+    queryKey: ["events", pageIdx, size, dRange, dCats],
     queryFn: () =>
       getAllEvents({
-        page,
+        page: pageIdx,
         size,
         costRange: dRange,
         eventCategoryList: dCats,
       }),
     staleTime: 1000 * 60 * 5,
-    placeholderData: (res) => res,
+    placeholderData: (old) => old,
   });
 
   const items: EventListItem[] = data?.data.data?.content ?? [];
-  const totalPages = data?.totalPages ?? page;
+  const totalPages = data?.totalPages ?? uiPage;
 
-  if (page < totalPages) {
+  if (pageIdx < totalPages - 1) {
     qc.prefetchQuery({
-      queryKey: ["events", page + 1, size, dRange, dCats],
+      queryKey: ["events", pageIdx + 1, size, dRange, dCats],
       queryFn: () =>
         getAllEvents({
-          page: page + 1,
+          page: pageIdx + 1,
           size,
           costRange: dRange,
           eventCategoryList: dCats,
@@ -131,15 +132,37 @@ export const EventListPage = () => {
       </div>
 
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold dark:text-primary-foreground">
-          모든 행사
-        </h1>
+        <h1 className="text-2xl font-bold">모든 행사</h1>
+      </header>
 
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-6">
+        <AnimatePresence mode="popLayout">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {items.map((ev) => (
+              <motion.div
+                key={ev.eventId}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                layout
+              >
+                <EventCard event={ev} />
+              </motion.div>
+            ))}
+
+            {isFetching &&
+              Array.from({ length: size - items.length }).map((_, i) => (
+                <Skeleton key={i} className="h-80 w-full rounded-xl" />
+              ))}
+          </div>
+        </AnimatePresence>
+
+        <div className="flex items-center justify-center gap-2">
           <Button
             size="sm"
             variant="secondary"
-            disabled={page === 1 || isFetching}
+            disabled={uiPage === 1 || isFetching}
             onClick={() => goPage(1)}
           >
             <ChevronsLeft className="size-4" />
@@ -147,54 +170,32 @@ export const EventListPage = () => {
           <Button
             size="sm"
             variant="secondary"
-            disabled={page === 1 || isFetching}
-            onClick={() => goPage(page - 1)}
+            disabled={uiPage === 1 || isFetching}
+            onClick={() => goPage(uiPage - 1)}
           >
             <ChevronLeft className="size-4" />
           </Button>
           <span className="w-16 text-center tabular-nums text-sm">
-            {page} / {totalPages}
+            {uiPage} / {totalPages}
           </span>
           <Button
             size="sm"
             variant="secondary"
-            disabled={page >= totalPages || isFetching}
-            onClick={() => goPage(page + 1)}
+            disabled={uiPage >= totalPages || isFetching}
+            onClick={() => goPage(uiPage + 1)}
           >
             <ChevronRight className="size-4" />
           </Button>
           <Button
             size="sm"
             variant="secondary"
-            disabled={page >= totalPages || isFetching}
+            disabled={uiPage >= totalPages || isFetching}
             onClick={() => goPage(totalPages)}
           >
             <ChevronsRight className="size-4" />
           </Button>
         </div>
-      </header>
-
-      <AnimatePresence mode="popLayout">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {items.map((ev) => (
-            <motion.div
-              key={ev.eventId}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-              layout
-            >
-              <EventCard event={ev} />
-            </motion.div>
-          ))}
-
-          {isFetching &&
-            Array.from({ length: size - items.length }).map((_, i) => (
-              <Skeleton key={i} className="h-80 w-full rounded-xl" />
-            ))}
-        </div>
-      </AnimatePresence>
+      </div>
     </section>
   );
 };
@@ -210,7 +211,7 @@ const EventCard = ({ event }: { event: EventListItem }) => (
       />
     </CardHeader>
     <CardContent className="flex flex-1 flex-col gap-2 p-4">
-      <CardTitle className="line-clamp-2 text-lg leading-tight dark:text-primary-foreground">
+      <CardTitle className="line-clamp-2 text-lg leading-tight">
         {event.information.title}
       </CardTitle>
       <p className="text-sm text-muted-foreground">
@@ -218,7 +219,7 @@ const EventCard = ({ event }: { event: EventListItem }) => (
           locale: ko,
         })}
       </p>
-      <p className="mt-auto text-base font-medium dark:text-primary-foreground">
+      <p className="mt-auto text-base font-medium">
         {event.information.hallName}
       </p>
     </CardContent>

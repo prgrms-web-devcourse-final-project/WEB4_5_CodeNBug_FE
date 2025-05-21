@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -11,6 +11,8 @@ export const PaymentSuccessPage = () => {
   const [params] = useSearchParams();
   const nav = useNavigate();
   const { purchaseId, eventAuthToken, reset } = usePaymentStore();
+
+  const calledRef = useRef(false);
 
   const { mutate } = useMutation({
     mutationFn: () =>
@@ -26,16 +28,18 @@ export const PaymentSuccessPage = () => {
       nav("/payments/complete", { replace: true });
       reset();
     },
-    onError: () => {
-      nav("/payments/fail", { replace: true });
-    },
+    onError: () => nav("/payments/fail", { replace: true }),
   });
 
   useEffect(() => {
+    if (calledRef.current) return;
+
     if (!purchaseId || !eventAuthToken) {
       nav("/payments/fail", { replace: true });
       return;
     }
+
+    calledRef.current = true;
     mutate();
   }, [mutate, purchaseId, eventAuthToken, nav]);
 

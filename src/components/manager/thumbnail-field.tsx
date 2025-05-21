@@ -1,44 +1,51 @@
-import { useState, useCallback } from "react";
-import { useFormContext, Controller } from "react-hook-form";
+import { useState, useEffect, useCallback } from "react";
+import { useFormContext, Controller, useWatch } from "react-hook-form";
 import { motion } from "motion/react";
 import { Label } from "../ui/label";
 import { Loader2 } from "lucide-react";
 import type { CreateEventPayload } from "@/schemas/manager.schema";
 import { getImageUrl } from "@/services/manager.service";
 
-const stripExtension = (name: string) => name.replace(/\.[^/.]+$/, "");
-
-const uploadFile = async (url: string, file: File) => {
-  await fetch(url, {
+const uploadFile = async (url: string, file: File) =>
+  fetch(url, {
     method: "PUT",
     body: file,
     headers: { "Content-Type": file.type },
+    credentials: "omit",
   });
-};
 
 const getObjectUrl = (presignedUrl: string) => presignedUrl.split("?")[0];
 
 export const ThumbnailField = () => {
   const { control, setValue } = useFormContext<CreateEventPayload>();
+
+  const thumbnailUrl = useWatch({ control, name: "thumbnailUrl" });
+
+  const [preview, setPreview] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [isDragOver, setDragOver] = useState(false);
 
+  useEffect(() => {
+    if (thumbnailUrl) setPreview(thumbnailUrl);
+  }, [thumbnailUrl]);
+
   const handleFile = useCallback(
     async (file: File) => {
+      const localUrl = URL.createObjectURL(file);
+      setPreview(localUrl);
+
       setLoading(true);
       try {
-        const plainName = stripExtension(file.name);
-        const res = await getImageUrl([plainName]);
-
-        const presignedUrl = res.data.data.find(
-          (d) => d.fileName === plainName
+        const { data } = await getImageUrl([file.name]);
+        const presignedUrl = data.data.find(
+          (d) => d.fileName === file.name
         )?.url;
-
         if (!presignedUrl) throw new Error("URL not found");
 
         await uploadFile(presignedUrl, file);
 
-        setValue("thumbnailUrl", getObjectUrl(presignedUrl), {
+        const finalUrl = getObjectUrl(presignedUrl);
+        setValue("thumbnailUrl", finalUrl, {
           shouldDirty: true,
           shouldValidate: true,
         });
@@ -91,7 +98,16 @@ export const ThumbnailField = () => {
                 }}
               />
 
-              {loading ? (
+              {preview ? (
+                <motion.img
+                  key="preview"
+                  src={preview}
+                  alt="썸네일 미리보기"
+                  className="h-40 w-auto rounded-md object-contain"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                />
+              ) : loading ? (
                 <motion.div
                   key="loading"
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -113,12 +129,12 @@ export const ThumbnailField = () => {
               )}
             </motion.div>
 
-            {field.value && !loading && (
+            {field.value && (
               <motion.div
                 key={field.value}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="mt-3 break-all text-xs bg-muted/50 py-2 px-3 rounded"
+                className="mt-3 break-all rounded bg-muted/50 py-2 px-3 text-xs"
               >
                 {field.value}
               </motion.div>

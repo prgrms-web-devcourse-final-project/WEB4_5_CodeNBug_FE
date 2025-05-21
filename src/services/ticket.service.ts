@@ -21,7 +21,10 @@ export const subscribeWaitingTickets = (
     maxRetry?: number;
   } = {}
 ) => {
-  const url = `/sse/api/v1/events/${eventId}/tickets/waiting`;
+  const url =
+    import.meta.env.MODE === "development"
+      ? `/sse/events/${eventId}/tickets/waiting`
+      : `${import.meta.env.VITE_QUEUE_URL}/events/${eventId}/tickets/waiting`;
 
   let es: EventSource | null = null;
   let retryCount = 0;

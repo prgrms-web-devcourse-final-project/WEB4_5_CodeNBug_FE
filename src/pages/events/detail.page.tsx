@@ -183,7 +183,7 @@ export const EventDetailPage = () => {
               조회수:&nbsp;{viewCount.toLocaleString()}
             </p>
             <p className="text-sm text-muted-foreground">
-              선택 가능 좌석:&nbsp;{availableSeat?.available ?? "-"}
+              선택 가능 좌석:&nbsp;{availableSeat?.data ?? "-"}
             </p>
 
             <Separator className="my-2" />

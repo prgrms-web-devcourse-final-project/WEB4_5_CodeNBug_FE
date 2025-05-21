@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 type PaymentState = {
   eventId?: string;
@@ -14,18 +15,36 @@ type PaymentState = {
   reset: () => void;
 };
 
-export const usePaymentStore = create<PaymentState>((set) => ({
-  seatList: [],
-  amount: 0,
-  setPaymentInfo: (info) => set((prev) => ({ ...prev, ...info })),
-  reset: () =>
-    set({
-      eventId: undefined,
+export const usePaymentStore = create<PaymentState>()(
+  persist(
+    (set) => ({
       seatList: [],
       amount: 0,
-      orderId: undefined,
-      eventAuthToken: undefined,
-      purchaseId: undefined,
-      closeQueue: undefined,
+
+      setPaymentInfo: (info) => set((prev) => ({ ...prev, ...info })),
+
+      reset: () =>
+        set({
+          eventId: undefined,
+          seatList: [],
+          amount: 0,
+          eventAuthToken: undefined,
+          purchaseId: undefined,
+          orderId: undefined,
+          closeQueue: undefined,
+        }),
     }),
-}));
+    {
+      name: "payment-store",
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({
+        eventId: state.eventId,
+        seatList: state.seatList,
+        amount: state.amount,
+        eventAuthToken: state.eventAuthToken,
+        purchaseId: state.purchaseId,
+        orderId: state.orderId,
+      }),
+    }
+  )
+);
