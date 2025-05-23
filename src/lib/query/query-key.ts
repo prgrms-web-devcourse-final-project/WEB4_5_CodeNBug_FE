@@ -6,11 +6,20 @@ const DOMAIN = {
   MANAGER: "manager",
   AVAILABLE: "available",
   SEAT: "seat",
+  PURCHASE: "purchase",
 };
 
 export const QUERY_KEY = {
   USER: {
     MY: [DOMAIN.USER, DOMAIN.MY],
+    PURCHASE: {
+      MY_LIST: (page: number) => [DOMAIN.USER, DOMAIN.PURCHASE, "list", page],
+      DETAIL: (purchasesId: number | null) => [
+        DOMAIN.USER,
+        DOMAIN.PURCHASE,
+        purchasesId,
+      ],
+    },
   },
   EVENT: {
     LIST: [DOMAIN.EVENT],
@@ -21,6 +30,7 @@ export const QUERY_KEY = {
   },
   MANAGER: {
     DEFAULT: [DOMAIN.MANAGER],
+    PURCHASE_LIST: (id: number | null) => [DOMAIN.MANAGER, "purchase-list", id],
   },
   NOTIFICATION: {
     DEFAULT: ["notification"] as const,

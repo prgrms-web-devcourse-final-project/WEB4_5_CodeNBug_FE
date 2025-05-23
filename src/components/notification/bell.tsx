@@ -32,7 +32,7 @@ export const NotificationBell = () => {
   const { data: list = [] } = useNotifications(userId);
 
   const [openId, setOpenId] = useState<number>();
-  const { data: detail, isFetching } = useNotificationDetail(userId, openId);
+  const { isFetching } = useNotificationDetail(userId, openId);
 
   const { mutate: removeOne } = useDeleteNotification(userId);
   const { mutate: removeAll, isPending: clearing } =
@@ -109,7 +109,7 @@ export const NotificationBell = () => {
                     )}
 
                     <span className="flex-1 line-clamp-1 text-left">
-                      {/* {n.title} */}
+                      {n.title}
                     </span>
 
                     <Button
@@ -129,12 +129,10 @@ export const NotificationBell = () => {
                   </AccordionTrigger>
 
                   <AccordionContent className="px-8 pb-4 text-sm">
-                    {isFetching && !detail ? (
+                    {isFetching ? (
                       <Skeleton className="h-4 w-full" />
                     ) : (
-                      <pre className="whitespace-pre-wrap">
-                        {detail?.content}
-                      </pre>
+                      <pre className="whitespace-pre-wrap">{n.content}</pre>
                     )}
                   </AccordionContent>
                 </AccordionItem>

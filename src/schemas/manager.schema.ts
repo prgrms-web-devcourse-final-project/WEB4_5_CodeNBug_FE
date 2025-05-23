@@ -145,3 +145,35 @@ export const ResManagerEventSchema = apiResponse(ManagerEventSchema);
 export type ResManagerEvent = z.infer<typeof ResManagerEventSchema>;
 export const ResManagerEventsSchema = apiResponse(z.array(ManagerEventSchema));
 export type ResManagerEvents = z.infer<typeof ResManagerEventsSchema>;
+
+export const ManagerPurchaseItemSchema = z
+  .object({
+    purchaseId: z.number(),
+    userId: z.number(),
+    userName: z.string(),
+    userEmail: z.string().email(),
+    phoneNum: z.string(),
+
+    payment_status: z.enum([
+      "DONE",
+      "PENDING",
+      "CANCELLED",
+      "REFUND_REQUEST",
+      "REFUNDED",
+    ]),
+    ticket_id: z.array(z.number()),
+
+    purchaseAt: z.string().datetime(),
+    amount: z.number(),
+  })
+  .transform((v) => ({
+    ...v,
+    paymentStatus: v.payment_status,
+    ticketIds: v.ticket_id,
+  }));
+
+export type ManagerPurchaseItem = z.infer<typeof ManagerPurchaseItemSchema>;
+export const ManagerPurchasesSchema = apiResponse(
+  z.array(ManagerPurchaseItemSchema)
+);
+export type ResPurchasesListType = z.infer<typeof ManagerPurchasesSchema>;

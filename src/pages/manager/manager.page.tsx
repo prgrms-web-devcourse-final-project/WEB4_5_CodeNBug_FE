@@ -32,6 +32,7 @@ import { EventCreateWizard } from "@/components/manager/event-create-wizard";
 import { NotificationCreateDrawer } from "@/components/manager/notification-create-drawer";
 import { createNotification } from "@/services/notification.service";
 import { toast } from "sonner";
+import { EventPurchasesDrawer } from "@/components/manager/event-purchases-drawer";
 
 export const ManagerPage = () => {
   const qc = useQueryClient();
@@ -189,6 +190,7 @@ export const ManagerPage = () => {
                     {format(ev.endDate, "HH:mm")}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
+                    <EventPurchasesDrawer eventId={ev.eventId} />
                     <Button
                       size="sm"
                       variant="outline"
@@ -202,9 +204,7 @@ export const ManagerPage = () => {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() =>
-                        handleDelete(String(ev.eventId ?? ev.eventId))
-                      }
+                      onClick={() => handleDelete(String(ev.eventId))}
                       disabled={deleteMut.isPending}
                     >
                       삭제

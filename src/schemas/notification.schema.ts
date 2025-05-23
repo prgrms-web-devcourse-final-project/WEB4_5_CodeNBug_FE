@@ -13,6 +13,7 @@ export const NotificationSchema = z
     id: z.number().int().positive(),
     type: z.enum(["SYSTEM", "EVENT", "TICKET", "PAYMENT"]),
     content: z.string(),
+    title: z.string(),
     sentAt: z.string().datetime(),
     read: z.boolean().optional(),
     isRead: z.boolean().optional(),

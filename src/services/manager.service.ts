@@ -3,6 +3,7 @@ import {
   ResManagerEvents,
   UpdateEventPayload,
   ResManagerEvent,
+  ResPurchasesListType,
 } from "@/schemas/manager.schema";
 import { axiosInstance } from "./api";
 import { ApiResponse } from "@/schemas/common.schema";
@@ -28,3 +29,20 @@ export const getImageUrl = async (fileNames: string[]) => {
     fileNames,
   });
 };
+
+export const getManagerPurchasesList = (eventId: number) =>
+  axiosInstance.get<ResPurchasesListType>(
+    `/manager/events/${eventId}/purchases`
+  );
+
+export interface ManagerRefundPayload {
+  purchasesIds: number[];
+  totalRefund: boolean;
+  reason: string;
+}
+
+export const managerRefund = (
+  purchaseId: number,
+  payload: ManagerRefundPayload
+) =>
+  axiosInstance.post(`/manager/events/${purchaseId}/purchases/refund`, payload);
