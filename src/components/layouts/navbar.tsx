@@ -36,6 +36,10 @@ export const Navbar = () => {
         queryKey: QUERY_KEY.NOTIFICATION.DEFAULT,
         type: "all",
       });
+      queryClient.removeQueries({
+        queryKey: QUERY_KEY.USER.OAUTH,
+        type: "all",
+      });
       toast.success("로그아웃 되었습니다.");
       router("/");
     },

@@ -7,7 +7,6 @@ import {
   refund,
   updateMyInfo,
 } from "../user.service";
-import { ManagerRefundPayload } from "../manager.service";
 
 export const useMyInfo = () =>
   useQuery({
@@ -42,15 +41,19 @@ export const useMyPurchase = (purchaseId: number | null) =>
     select: (res) => res.data.data?.purchases[0] ?? null,
   });
 
-export const useRefund = (purchaseId: number | null, page: number) => {
+export const useRefund = (
+  purchaseId: number | null,
+  paymentKey: string,
+  page: number
+) => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: ManagerRefundPayload) => {
+    mutationFn: (cancelReason: string) => {
       if (purchaseId === null) {
         return Promise.reject(new Error("purchaseId is null"));
       }
-      return refund(purchaseId, payload);
+      return refund(purchaseId, paymentKey, cancelReason);
     },
 
     onSuccess: () => {

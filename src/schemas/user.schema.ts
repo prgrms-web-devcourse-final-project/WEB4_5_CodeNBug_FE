@@ -53,6 +53,7 @@ export const PurchaseDetailItemSchema = z.object({
   purchaseDate: z.string().datetime(),
   paymentMethod: z.string(),
   paymentStatus: z.enum(["DONE", "PENDING", "CANCELLED"]),
+  paymentKey: z.string(),
   tickets: z.array(TicketSchema),
 });
 export type PurchaseDetailItem = z.infer<typeof PurchaseDetailItemSchema>;

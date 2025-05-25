@@ -7,10 +7,12 @@ const DOMAIN = {
   AVAILABLE: "available",
   SEAT: "seat",
   PURCHASE: "purchase",
+  OAUTH: "oauth",
 };
 
 export const QUERY_KEY = {
   USER: {
+    OAUTH: [DOMAIN.OAUTH],
     MY: [DOMAIN.USER, DOMAIN.MY],
     PURCHASE: {
       MY_LIST: (page: number) => [DOMAIN.USER, DOMAIN.PURCHASE, "list", page],

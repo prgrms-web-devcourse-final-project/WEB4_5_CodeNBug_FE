@@ -17,34 +17,28 @@ import { useRefund } from "@/services/query/user.query";
 interface Props {
   purchaseId: number;
   page: number;
+  paymentKey: string;
 }
 
-export const RefundDialog = ({ purchaseId, page }: Props) => {
+export const RefundDialog = ({ paymentKey, purchaseId, page }: Props) => {
   const [reason, setReason] = useState("");
   const [open, setOpen] = useState(false);
 
-  const { mutate, isPending } = useRefund(purchaseId, page);
+  const { mutate, isPending } = useRefund(purchaseId, paymentKey, page);
 
   const handleRefund = () => {
     if (!reason.trim()) {
       toast.error("취소 사유를 입력해 주세요.");
       return;
     }
-    mutate(
-      {
-        purchasesIds: [purchaseId],
-        totalRefund: false,
-        reason,
+    mutate(reason, {
+      onSuccess: () => {
+        toast.success("환불 요청이 접수되었습니다.");
+        setReason("");
+        setOpen(false);
       },
-      {
-        onSuccess: () => {
-          toast.success("환불 요청이 접수되었습니다.");
-          setReason("");
-          setOpen(false);
-        },
-        onError: () => toast.error("환불 요청 실패"),
-      }
-    );
+      onError: () => toast.error("환불 요청 실패"),
+    });
   };
 
   return (

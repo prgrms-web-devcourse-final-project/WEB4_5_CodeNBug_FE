@@ -78,7 +78,11 @@ export const PurchaseDetailDrawer = ({ purchaseId, page }: Props) => {
                 {data.tickets.map((t) => t.seatLocation).join(", ")}
               </p>
               {data.paymentStatus === "DONE" && (
-                <RefundDialog purchaseId={purchaseId} page={page} />
+                <RefundDialog
+                  paymentKey={data.paymentKey}
+                  purchaseId={purchaseId}
+                  page={page}
+                />
               )}
             </>
           )}

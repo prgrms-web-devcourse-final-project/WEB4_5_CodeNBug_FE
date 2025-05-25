@@ -12,6 +12,10 @@ import { requireUnauthLoader } from "@/pages/auth.page";
 import { RouteErrorPage } from "@/pages/not-found";
 import { managerRoute } from "./manager.route";
 import { ManagerLayout, requireManagerLoader } from "@/layouts/manager.layout";
+import {
+  oauthCallbackLoader,
+  OAuthCallbackPage,
+} from "@/pages/social/oauth-callback.page";
 
 export const router = createBrowserRouter([
   {
@@ -36,17 +40,9 @@ export const router = createBrowserRouter([
         loader: requireUnauthLoader,
       },
       {
-        loader: requireUnauthLoader,
-        children: [
-          {
-            path: "auth/google/callback",
-            lazy: lazyLoad(() => import("@/pages/social/google.page")),
-          },
-          {
-            path: "auth/kakao/callback",
-            lazy: lazyLoad(() => import("@/pages/social/kakao.page")),
-          },
-        ],
+        path: "auth/:provider/callback",
+        element: <OAuthCallbackPage />,
+        loader: oauthCallbackLoader,
       },
       {
         element: <AuthLayout />,

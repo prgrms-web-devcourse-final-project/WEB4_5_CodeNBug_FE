@@ -62,9 +62,37 @@ export const socialLogin = async (
   socialId: string,
   payload: SocialLoginType
 ) => {
-  return await axiosInstance.post(`/sns/additional-info/${socialId}`, payload);
+  return await axios.post(
+    `${
+      import.meta.env.MODE === "development"
+        ? "/auth-api"
+        : import.meta.env.VITE_SERVER_URL
+    }/auth/sns/additional-info/${socialId}`,
+    payload
+  );
 };
 
 export const refreshAuth = async () => {
   return await axiosInstance.post("/auth/refresh");
 };
+
+export const getOAuthInfo = async (
+  provider: "google" | "kakao",
+  code: string | null
+) =>
+  await axios.get(
+    `${
+      import.meta.env.MODE === "development"
+        ? "/auth-api"
+        : import.meta.env.VITE_SERVER_URL
+    }/auth/${provider}/callback`,
+    {
+      withCredentials: true,
+      params: {
+        code,
+        redirectUrl: `${
+          import.meta.env.VITE_CLIENT_URL
+        }/auth/${provider}/callback`,
+      },
+    }
+  );

@@ -2,12 +2,12 @@ import { useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { socialLoginSchema, SocialLoginType } from "@/schemas/auth.schema";
-import { socialLogin } from "@/services/auth.service";
+import { getOAuthInfo, socialLogin } from "@/services/auth.service";
 import { formatPhone } from "@/lib/utils";
 
 import {
@@ -29,8 +29,17 @@ import {
 } from "../ui/select";
 import { Separator } from "../ui/separator";
 import { OAuthButton } from "./oauth-button";
+import { QUERY_KEY } from "@/lib/query/query-key";
 
-export const SocialForm = ({ code }: { code: string | null }) => {
+type Provider = "google" | "kakao";
+
+export const SocialForm = ({
+  code,
+  provider,
+}: {
+  code: string | null;
+  provider: Provider;
+}) => {
   const router = useNavigate();
 
   const form = useForm<SocialLoginType>({
@@ -43,8 +52,16 @@ export const SocialForm = ({ code }: { code: string | null }) => {
     } as unknown as SocialLoginType,
   });
 
+  const { data } = useQuery({
+    queryKey: QUERY_KEY.USER.OAUTH,
+    queryFn: () => getOAuthInfo(provider, code),
+    enabled: !!code,
+    select: (res) => res.data.data,
+  });
+
   const { mutate: socialLoginMut, isPending: signingUp } = useMutation({
-    mutationFn: (payload: SocialLoginType) => socialLogin(code ?? "", payload),
+    mutationFn: (payload: SocialLoginType) =>
+      socialLogin(data.socialId, payload),
     onSuccess: (res) => {
       toast.success(res.data.msg ?? "소셜 로그인 성공");
       form.reset();
@@ -53,7 +70,15 @@ export const SocialForm = ({ code }: { code: string | null }) => {
     onError: () => toast.error("소셜 로그인에 실패했습니다."),
   });
 
-  const handleSubmit = (data: SocialLoginType) => socialLoginMut(data);
+  const handleSubmit = (payload: SocialLoginType) => {
+    if (!data?.socialId) {
+      toast.error(
+        "소셜 로그인 정보가 존재하지 않습니다. 다시 로그인 해주세요."
+      );
+      return;
+    }
+    socialLoginMut(payload);
+  };
 
   const handleNumericChange = useCallback(
     (onChange: (v: string) => void) =>
