@@ -2,12 +2,12 @@ import { useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { socialLoginSchema, SocialLoginType } from "@/schemas/auth.schema";
-import { getOAuthInfo, socialLogin } from "@/services/auth.service";
+import { socialLogin } from "@/services/auth.service";
 import { formatPhone } from "@/lib/utils";
 
 import {
@@ -29,17 +29,23 @@ import {
 } from "../ui/select";
 import { Separator } from "../ui/separator";
 import { OAuthButton } from "./oauth-button";
-import { QUERY_KEY } from "@/lib/query/query-key";
 
+// 타입 정의
 type Provider = "google" | "kakao";
 
-export const SocialForm = ({
-  code,
-  provider,
-}: {
+interface OAuthData {
+  name: string;
+  provider: string;
+  socialId: string;
+}
+
+interface SocialFormProps {
   code: string | null;
   provider: Provider;
-}) => {
+  oauthData: OAuthData;
+}
+
+export const SocialForm = ({ code, provider, oauthData }: SocialFormProps) => {
   const router = useNavigate();
 
   const form = useForm<SocialLoginType>({
@@ -49,19 +55,12 @@ export const SocialForm = ({
       sex: "",
       phoneNum: "",
       location: "",
-    } as unknown as SocialLoginType,
-  });
-
-  const { data } = useQuery({
-    queryKey: QUERY_KEY.USER.OAUTH,
-    queryFn: () => getOAuthInfo(provider, code),
-    enabled: !!code,
-    select: (res) => res.data.data,
+    },
   });
 
   const { mutate: socialLoginMut, isPending: signingUp } = useMutation({
     mutationFn: (payload: SocialLoginType) =>
-      socialLogin(data.socialId, payload),
+      socialLogin(oauthData.socialId, payload),
     onSuccess: (res) => {
       toast.success(res.data.msg ?? "소셜 로그인 성공");
       form.reset();
@@ -71,7 +70,7 @@ export const SocialForm = ({
   });
 
   const handleSubmit = (payload: SocialLoginType) => {
-    if (!data?.socialId) {
+    if (!oauthData?.socialId) {
       toast.error(
         "소셜 로그인 정보가 존재하지 않습니다. 다시 로그인 해주세요."
       );
