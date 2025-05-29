@@ -8,10 +8,11 @@ import { toast } from "sonner";
 interface LoaderData {
   code: string;
   provider: "google" | "kakao";
+  oauthData: { socialId: string };
 }
 
 export const OAuthCallbackPage = () => {
-  const { code, provider } = useLoaderData() as LoaderData;
+  const { code, provider, oauthData } = useLoaderData() as LoaderData;
 
   return (
     <motion.section
@@ -20,7 +21,11 @@ export const OAuthCallbackPage = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <SocialForm code={code} provider={provider} />
+      <SocialForm
+        code={code}
+        provider={provider}
+        socialId={oauthData?.socialId ?? ""}
+      />
     </motion.section>
   );
 };
@@ -35,7 +40,7 @@ export const oauthCallbackLoader: LoaderFunction = async ({
 
   if (!code || !provider) throw redirect("/auth");
 
-  await getOAuthInfo(provider, code).catch(() => {
+  const { data } = await getOAuthInfo(provider, code).catch(() => {
     toast.error("로그인 중 에러가 발생하였습니다.");
     throw redirect("/");
   });
@@ -43,5 +48,5 @@ export const oauthCallbackLoader: LoaderFunction = async ({
   const me = await fetchSession();
   if (me?.data?.age) throw redirect("/");
 
-  return { code, provider };
+  return { code, provider, oauthData: data.data };
 };

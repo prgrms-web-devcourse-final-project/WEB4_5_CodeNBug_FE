@@ -21,6 +21,7 @@ import {
   useNotificationDetail,
   useDeleteNotification,
   useDeleteAllNotifications,
+  useUnreadNotifications,
 } from "@/services/query/notification.query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ export const NotificationBell = () => {
   const { data: me } = useMyInfo();
   const userId = me?.id ?? -1;
   const { data: list = [] } = useNotifications(userId);
+  const { data: unreadList = [] } = useUnreadNotifications(userId);
 
   const [openId, setOpenId] = useState<number>();
   const { isFetching } = useNotificationDetail(userId, openId);
@@ -38,7 +40,7 @@ export const NotificationBell = () => {
   const { mutate: removeAll, isPending: clearing } =
     useDeleteAllNotifications(userId);
 
-  const unreadCount = list.filter((n) => !n.isRead).length;
+  const unreadCount = unreadList.filter((n) => !n.isRead).length;
 
   return (
     <DropdownMenu>

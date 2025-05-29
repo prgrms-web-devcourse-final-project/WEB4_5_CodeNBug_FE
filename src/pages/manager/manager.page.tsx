@@ -173,6 +173,7 @@ export const ManagerPage = () => {
               <TableHead>제목</TableHead>
               <TableHead>타입</TableHead>
               <TableHead>기간</TableHead>
+              <TableHead>예매 기간</TableHead>
               <TableHead className="text-right">액션</TableHead>
             </TableRow>
           </TableHeader>
@@ -186,8 +187,12 @@ export const ManagerPage = () => {
                     <Badge variant="secondary">{ev.category}</Badge>
                   </TableCell>
                   <TableCell>
-                    {format(ev.startDate, "yyyy-MM-dd HH:mm")} ~{" "}
-                    {format(ev.endDate, "HH:mm")}
+                    {format(ev.startDate, "yyyy.MM.dd HH:mm")} ~{" "}
+                    {format(ev.endDate, "yyyy.MM.dd HH:mm")}
+                  </TableCell>
+                  <TableCell>
+                    {format(ev.bookingStart, "yyyy.MM.dd HH:mm")} ~{" "}
+                    {format(ev.bookingEnd, "yyyy.MM.dd HH:mm")}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
                     <EventPurchasesDrawer eventId={ev.eventId} />

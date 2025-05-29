@@ -66,6 +66,10 @@ export const ResEventsSchema = apiResponse(
   z.object({ content: EventsSchema, page: pageSchema })
 );
 export type ResEvents = z.infer<typeof ResEventsSchema>;
+export const ResRecommendEventsSchema = apiResponse(EventsSchema);
+export type ResRecommendEventsSchemaType = z.infer<
+  typeof ResRecommendEventsSchema
+>;
 
 const LayoutGradeSchema = z.object({ grade: z.string().min(1) });
 export const SeatGridSchema = z.object({
@@ -135,6 +139,8 @@ export const EventDetailSchema = z.object({
 
   seatSelectable: z.boolean(),
   isDeleted: z.boolean(),
+  maxPrice: z.number(),
+  minPrice: z.number(),
 });
 export type EventDetail = z.infer<typeof EventDetailSchema>;
 

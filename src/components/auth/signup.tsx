@@ -43,6 +43,7 @@ export const SignupForm = () => {
     defaultValues: {
       email: "",
       password: "",
+      passwordConfirm: "",
       name: "",
       age: "",
       sex: "",
@@ -204,6 +205,19 @@ export const SignupForm = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>비밀번호</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="passwordConfirm"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>비밀번호 확인</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••" {...field} />
               </FormControl>

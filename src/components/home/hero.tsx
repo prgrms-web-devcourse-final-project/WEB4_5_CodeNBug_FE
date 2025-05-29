@@ -2,8 +2,11 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { useNavigate } from "react-router";
 
 export const HeroSection = () => {
+  const nav = useNavigate();
+
   const [query, setQuery] = useState<string>("");
 
   return (
@@ -37,10 +40,9 @@ export const HeroSection = () => {
           className="mx-auto flex max-w-xl items-center gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!query.trim()) return;
-            window.location.href = `/events?search=${encodeURIComponent(
-              query.trim()
-            )}`;
+            const q = query.trim();
+            if (!q) return;
+            nav(`/events?keyword=${encodeURIComponent(q)}`);
           }}
         >
           <Input

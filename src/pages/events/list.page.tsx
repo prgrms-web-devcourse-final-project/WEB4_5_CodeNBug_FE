@@ -2,29 +2,23 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 import { getAllEvents } from "@/services/event.service";
 import { EventCategory, EventListItem } from "@/schemas/event.schema";
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-  CardTitle,
-} from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "motion/react";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
 import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { EventCard } from "@/components/event/event-card";
 
 const DEFAULT_RANGE = { min: 0, max: 999999 };
 const CATEGORY_OPTIONS: EventCategory[] = [
@@ -44,42 +38,65 @@ export const EventListPage = () => {
 
   const [range, setRange] = useState(DEFAULT_RANGE);
   const [categories, setCategories] = useState<string[]>([]);
+  const [keyword, setKeyword] = useState(() => {
+    return (params.get("keyword") ?? "").toLowerCase();
+  });
 
   const dRange = useDeferredValue(range);
   const dCats = useDeferredValue(categories);
+  const dKey = useDebouncedValue(keyword, 500);
 
   const qc = useQueryClient();
   const { data, isLoading, isError, isFetching, error } = useQuery({
-    queryKey: ["events", pageIdx, size, dRange, dCats],
+    queryKey: ["events", pageIdx, size, dRange, dCats, dKey],
     queryFn: () =>
       getAllEvents({
         page: pageIdx,
         size,
         costRange: dRange,
         eventCategoryList: dCats,
+        keyword: dKey,
       }),
-    staleTime: 1000 * 60 * 5,
+    staleTime: Infinity,
     placeholderData: (old) => old,
   });
 
   const items: EventListItem[] = data?.data.data?.content ?? [];
   const totalPages = data?.totalPages ?? uiPage;
 
-  if (pageIdx < totalPages - 1) {
+  if (pageIdx < (data?.totalPages ?? uiPage) - 1) {
     qc.prefetchQuery({
-      queryKey: ["events", pageIdx + 1, size, dRange, dCats],
+      queryKey: ["events", pageIdx + 1, size, dRange, dCats, dKey],
       queryFn: () =>
         getAllEvents({
           page: pageIdx + 1,
           size,
           costRange: dRange,
           eventCategoryList: dCats,
+          keyword: dKey,
         }),
+      staleTime: Infinity,
     });
   }
 
   const goPage = (p: number) =>
     setParams({ page: String(p), size: String(size) });
+
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    if (dKey) next.set("keyword", dKey);
+    else next.delete("keyword");
+
+    if (next.toString() !== params.toString()) {
+      setParams(next, { replace: true });
+    }
+  }, [dKey]);
+
+  useEffect(() => {
+    if (uiPage !== 1) {
+      setParams({ page: "1", size: String(size) }, { replace: true });
+    }
+  }, [dRange, dCats, dKey]);
 
   if (isLoading && !data) return <SkeletonGrid count={size} />;
 
@@ -98,6 +115,16 @@ export const EventListPage = () => {
   return (
     <section className="container mx-auto px-4 py-8">
       <div className="mb-6 rounded-lg border p-4 space-y-6">
+        <div>
+          <h2 className="text-sm font-medium mb-2">검색</h2>
+          <Input
+            placeholder="공연명, 장소 등을 검색하세요"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value.toLowerCase())}
+          />
+        </div>
+
+        <Separator />
         <div>
           <h2 className="text-sm font-medium mb-2">가격(₩)</h2>
           <Slider
@@ -199,37 +226,6 @@ export const EventListPage = () => {
     </section>
   );
 };
-
-const EventCard = ({ event }: { event: EventListItem }) => (
-  <Card className="flex h-full flex-col overflow-hidden rounded-xl bg-card shadow-sm transition-shadow hover:shadow-md dark:bg-muted/30">
-    <CardHeader className="p-0">
-      <img
-        src={event.information.thumbnailUrl}
-        alt={event.information.title}
-        className="h-48 w-full object-cover"
-        loading="lazy"
-      />
-    </CardHeader>
-    <CardContent className="flex flex-1 flex-col gap-2 p-4">
-      <CardTitle className="line-clamp-2 text-lg leading-tight">
-        {event.information.title}
-      </CardTitle>
-      <p className="text-sm text-muted-foreground">
-        {format(event.information.eventStart, "yyyy-MM-dd HH:mm", {
-          locale: ko,
-        })}
-      </p>
-      <p className="mt-auto text-base font-medium">
-        {event.information.hallName}
-      </p>
-    </CardContent>
-    <CardFooter className="p-4 pt-0">
-      <Button className="w-full" asChild>
-        <a href={`/events/${event.eventId}`}>예매하기</a>
-      </Button>
-    </CardFooter>
-  </Card>
-);
 
 const SkeletonGrid = ({ count }: { count: number }) => (
   <section className="container mx-auto grid grid-cols-1 gap-6 px-4 py-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

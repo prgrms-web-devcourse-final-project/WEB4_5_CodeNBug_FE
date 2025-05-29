@@ -2,6 +2,7 @@ import {
   ResEvent,
   ResEventCategoriesType,
   ResEvents,
+  ResRecommendEventsSchemaType,
 } from "@/schemas/event.schema";
 import { axiosInstance } from "./api";
 import { ResSetSeatApiSchemaType } from "@/schemas/seat.schema";
@@ -13,16 +14,22 @@ export const getAllEvents = async ({
   size,
   costRange,
   eventCategoryList,
+  keyword,
 }: {
   page: number;
   size: number;
   costRange: CostRange;
   eventCategoryList: string[];
+  keyword?: string;
 }) => {
-  const res = await axiosInstance.post<ResEvents>(
-    `/events?page=${page}&size=${size}`,
-    { costRange, eventCategoryList }
-  );
+  const url =
+    `/events?page=${page}&size=${size}` +
+    (keyword ? `&keyword=${encodeURIComponent(keyword)}` : "");
+
+  const res = await axiosInstance.post<ResEvents>(url, {
+    costRange,
+    eventCategoryList,
+  });
 
   return {
     data: res.data,
@@ -55,5 +62,12 @@ export const setSeat = async (
       ticketCount,
     },
     { headers: { entryAuthToken } }
+  );
+};
+
+export const getRecommendEvents = async (count: number = 5) => {
+  return await axiosInstance.get<ResRecommendEventsSchemaType>(
+    "/events/recommend",
+    { params: { count } }
   );
 };

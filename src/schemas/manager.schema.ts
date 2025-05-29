@@ -139,6 +139,14 @@ export const ManagerEventSchema = z.object({
   location: z.string().min(1),
   hallName: z.string().min(1),
   isDeleted: z.boolean(),
+  bookingStart: z
+    .string()
+    .datetime()
+    .transform((s) => new Date(s)),
+  bookingEnd: z
+    .string()
+    .datetime()
+    .transform((s) => new Date(s)),
 });
 export type ManagerEvent = z.infer<typeof ManagerEventSchema>;
 export const ResManagerEventSchema = apiResponse(ManagerEventSchema);

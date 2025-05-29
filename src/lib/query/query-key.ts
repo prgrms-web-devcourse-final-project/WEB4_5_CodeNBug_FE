@@ -29,6 +29,7 @@ export const QUERY_KEY = {
     CATEGORY: [DOMAIN.EVENT, DOMAIN.CATEGORY],
     AVAILABLE: (eventId: string) => [DOMAIN.EVENT, DOMAIN.AVAILABLE, eventId],
     SEAT: (eventId: string) => [DOMAIN.SEAT, eventId],
+    RECOMMEND: (count: number) => [DOMAIN.EVENT, "recommend", count],
   },
   MANAGER: {
     DEFAULT: [DOMAIN.MANAGER],
