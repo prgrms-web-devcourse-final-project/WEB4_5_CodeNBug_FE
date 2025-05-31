@@ -47,12 +47,12 @@ export const CategorySection = () => {
       <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
         {categories.map((c, i) => {
           const { isLoading, isError, data } = results[i] ?? {};
-          const imgSrc = data ?? c.img;
+          const imgSrc = data;
 
           return (
             <Link
               key={c.name}
-              to={`/events?category=${c.name}`}
+              to={`/events?page=1&category=${c.id}`}
               className="group relative block aspect-square overflow-hidden rounded-lg"
             >
               {isLoading && (
@@ -71,7 +71,7 @@ export const CategorySection = () => {
                 <div className="h-full w-full bg-gradient-to-br from-primary to-secondary blur-sm" />
               )}
 
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-colors duration-300 group-hover:bg-black/20">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xs transition-colors duration-300 group-hover:bg-black/20">
                 <span className="text-sm font-medium text-white drop-shadow-lg">
                   {c.name}
                 </span>

@@ -14,11 +14,11 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const DetailSkeleton = () => (
   <div className="container mx-auto px-4 py-10">
@@ -89,21 +89,18 @@ export const EventDetailPage = () => {
 
   if (!event.data) return null;
 
-  const {
-    information,
-    bookingStart,
-    bookingEnd,
-    viewCount,
-    seatSelectable,
-    status,
-  } = event.data;
+  const { information, bookingStart, bookingEnd, viewCount, seatSelectable } =
+    event.data;
 
-  const now = new Date();
-  const canBook =
-    status === "OPEN" &&
-    seatSelectable &&
-    now >= new Date(bookingStart) &&
-    now <= new Date(bookingEnd);
+  type BookingState = "BEFORE" | "OPEN" | "CLOSED";
+  const now = Date.now();
+  const startTs = new Date(bookingStart).getTime();
+  const endTs = new Date(bookingEnd).getTime();
+
+  const bookingState: BookingState =
+    now < startTs ? "BEFORE" : now > endTs ? "CLOSED" : "OPEN";
+
+  const canBook = bookingState === "OPEN";
 
   return (
     <motion.section
@@ -134,23 +131,44 @@ export const EventDetailPage = () => {
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{information.hallName}</Badge>
               <Badge variant="outline">{information.location}</Badge>
-              <Badge variant={status === "OPEN" ? "default" : "outline"}>
-                {canBook ? "예매 가능" : "예매 불가능"}
+              <Badge
+                variant={canBook ? "default" : "outline"}
+                className="shrink-0"
+              >
+                {
+                  {
+                    BEFORE: "예매 전",
+                    OPEN: "예매 가능",
+                    CLOSED: "예매 종료",
+                  }[bookingState]
+                }
               </Badge>
+              {!seatSelectable && (
+                <Badge variant="secondary" className="shrink-0">
+                  랜덤 좌석
+                </Badge>
+              )}
             </div>
 
             <p className="text-lg font-medium dark:text-primary-foreground">
-              {format(information.eventStart, "yyyy년 MM월 dd일 HH:mm", {
-                locale: ko,
-              })}
+              {format(
+                new Date(information.eventStart),
+                "yyyy년 MM월 dd일 HH:mm",
+                {
+                  locale: ko,
+                }
+              )}
               &nbsp;~&nbsp;
-              {format(information.eventEnd, "HH:mm", { locale: ko })}
+              {format(new Date(information.eventEnd), "HH:mm", { locale: ko })}
             </p>
 
             <p className="text-sm text-muted-foreground">
               예매 기간:&nbsp;
-              {format(bookingStart, "yyyy-MM-dd HH:mm", { locale: ko })} ~{" "}
-              {format(bookingEnd, "yyyy-MM-dd HH:mm", { locale: ko })}
+              {format(new Date(bookingStart), "yyyy-MM-dd HH:mm", {
+                locale: ko,
+              })}{" "}
+              ~{" "}
+              {format(new Date(bookingEnd), "yyyy-MM-dd HH:mm", { locale: ko })}
             </p>
 
             <p className="text-sm text-muted-foreground">
@@ -163,7 +181,7 @@ export const EventDetailPage = () => {
               {sortedPrices.map(({ id, grade, amount }) => (
                 <li
                   key={id}
-                  className="px-2 py-[2px] rounded bg-primary/10 text-sm"
+                  className="rounded bg-primary/10 px-2 py-[2px] text-sm"
                 >
                   {grade}: {amount.toLocaleString()}원
                 </li>

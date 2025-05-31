@@ -27,13 +27,23 @@ export const EventCard = ({ event }: EventCardProps) => {
     bookingStart,
     bookingEnd,
     viewCount,
-    status,
     seatSelectable,
     minPrice,
     maxPrice,
   } = event;
 
-  const bookingClosed = status !== "OPEN";
+  type BookingState = "BEFORE" | "OPEN" | "CLOSED";
+  const now = Date.now();
+
+  const bookingState: BookingState = (() => {
+    const start = new Date(bookingStart).getTime();
+    const end = new Date(bookingEnd).getTime();
+    if (now < start) return "BEFORE";
+    if (now > end) return "CLOSED";
+    return "OPEN";
+  })();
+
+  const bookingClosed = bookingState !== "OPEN";
 
   const dateRange = `${format(new Date(information.eventStart), "yyyy.MM.dd", {
     locale: ko,
@@ -65,7 +75,13 @@ export const EventCard = ({ event }: EventCardProps) => {
               variant={bookingClosed ? "secondary" : "default"}
               className="text-xs"
             >
-              {status === "OPEN" ? "예매 가능" : "예매 종료"}
+              {
+                {
+                  BEFORE: "예매 전",
+                  OPEN: "예매 가능",
+                  CLOSED: "예매 종료",
+                }[bookingState]
+              }
             </Badge>
             <Badge
               variant={seatSelectable ? "default" : "secondary"}
@@ -124,7 +140,11 @@ export const EventCard = ({ event }: EventCardProps) => {
             variant={bookingClosed ? "secondary" : "outline"}
           >
             <Link to={`/events/${eventId}`}>
-              {bookingClosed ? "예매 마감" : "예매하기"}
+              {bookingClosed
+                ? bookingState === "BEFORE"
+                  ? "예매 전"
+                  : "예매 마감"
+                : "예매하기"}
             </Link>
           </Button>
         </CardFooter>

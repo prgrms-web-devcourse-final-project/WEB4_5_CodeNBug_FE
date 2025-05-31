@@ -2,6 +2,7 @@ type EntryPayload = {
   eventId: number;
   userId: number;
   token: string;
+  order: number;
   status: "IN_ENTRY" | "IN_PROGRESS" | "EXPIRED";
 };
 

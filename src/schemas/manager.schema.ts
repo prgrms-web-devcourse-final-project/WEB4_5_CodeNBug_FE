@@ -96,17 +96,6 @@ const withCrossChecks = <S extends z.ZodTypeAny>(schema: S) =>
         path: ["bookingEnd"],
       });
     }
-    const rows = data.layout.layout.length;
-    const cols = data.layout.layout[0].length;
-    if (rows * cols > data.seatCount) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `좌석 매트릭스(${rows}×${cols} = ${
-          rows * cols
-        }석)가 총 좌석 수(${data.seatCount}석)를 초과합니다.`,
-        path: ["layout"],
-      });
-    }
   });
 
 export const CreateEventPayloadSchema = withCrossChecks(BaseEventSchema);

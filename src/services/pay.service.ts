@@ -28,9 +28,10 @@ export const confirmPayment = async ({
   orderId: string;
   amount: number;
   entryAuthToken: string;
-}) =>
-  axiosInstance.post(
+}) => {
+  return await axiosInstance.post(
     "/payments/confirm",
     { purchaseId, paymentKey, orderId, amount },
     { headers: { entryAuthToken } }
   );
+};

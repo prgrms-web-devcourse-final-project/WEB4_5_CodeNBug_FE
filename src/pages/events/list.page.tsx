@@ -12,7 +12,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,8 +36,15 @@ export const EventListPage = () => {
   const pageIdx = uiPage - 1;
   const size = Math.max(Number(params.get("size") ?? "8"), 1);
 
+  const initCats = useMemo(() => {
+    const many = params.getAll("category");
+    if (many.length) return many;
+    const one = params.get("category");
+    return one ? [one] : [];
+  }, [params]);
+
   const [range, setRange] = useState(DEFAULT_RANGE);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>(initCats);
   const [keyword, setKeyword] = useState(() => {
     return (params.get("keyword") ?? "").toLowerCase();
   });
@@ -91,6 +98,14 @@ export const EventListPage = () => {
       setParams(next, { replace: true });
     }
   }, [dKey]);
+
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    next.delete("category");
+    dCats.forEach((c) => next.append("category", c));
+    if (next.toString() !== params.toString())
+      setParams(next, { replace: true });
+  }, [dCats]);
 
   useEffect(() => {
     if (uiPage !== 1) {

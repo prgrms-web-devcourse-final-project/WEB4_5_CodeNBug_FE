@@ -75,6 +75,7 @@ export function EventCreateWizard({
           agelimit: 0,
         },
   });
+  console.log(methods.formState.errors);
 
   const { trigger, reset } = methods;
 

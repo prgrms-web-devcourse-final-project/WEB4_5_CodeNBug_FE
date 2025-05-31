@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+} from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -9,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { SeatGrade } from "@/schemas/seat.schema";
-import { CreateEventPayload } from "@/schemas/manager.schema";
+import { type CreateEventPayload } from "@/schemas/manager.schema";
 
 interface SeatLayoutBuilderProps {
   seatCount: number;
@@ -28,35 +34,38 @@ const gradeShort: Record<SeatGrade, string> = {
 };
 const letter = (i: number) => String.fromCharCode(65 + i);
 
-export function SeatLayoutBuilder({
+export const SeatLayoutBuilder = ({
   seatCount,
   value,
   onChange,
-}: SeatLayoutBuilderProps) {
+}: SeatLayoutBuilderProps) => {
   const [rowInput, setRowInput] = useState(String(value?.layout?.length || 1));
   const [colInput, setColInput] = useState(
-    String(value?.layout[0]?.length || 1)
+    String(value?.layout?.[0]?.length || 1)
   );
-
   const rows = Math.max(1, Number(rowInput) || 1);
   const cols = Math.max(1, Number(colInput) || 1);
-  const overLimit = rows * cols > seatCount;
-
-  const reactId = useId();
 
   const [rowOverride, setRowOverride] = useState<Record<number, SeatGrade>>({});
 
   useEffect(() => {
-    if (overLimit) return;
+    let created = 0;
 
     const nextLayout: (string | null)[][] = Array.from(
       { length: rows },
       (_, r) =>
         Array.from({ length: cols }, (_, c) => {
           const existing = value?.layout?.[r]?.[c];
-          if (existing) return existing;
+          if (existing) {
+            created++;
+            return existing;
+          }
 
-          return `${letter(r)}${c + 1}`;
+          if (created < seatCount) {
+            created++;
+            return `${letter(r)}${c + 1}`;
+          }
+          return null;
         })
     );
 
@@ -69,9 +78,9 @@ export function SeatLayoutBuilder({
     );
 
     onChange({ layout: nextLayout, seat: nextSeat });
-  }, [rows, cols]);
+  }, [rows, cols, seatCount]);
 
-  const seatSelected = rows * cols;
+  const seatSelected = value.layout.flat().filter(Boolean).length;
 
   const changeGrade = useCallback(
     (id: string, grade: SeatGrade) => {
@@ -82,8 +91,8 @@ export function SeatLayoutBuilder({
 
   const setRowGrade = useCallback(
     (r: number, grade: SeatGrade) => {
-      const seatMap = { ...value.seat } as typeof value.seat;
-      value?.layout?.[r].forEach((id) => {
+      const seatMap = { ...value.seat };
+      value.layout[r].forEach((id) => {
         if (id) seatMap[id] = { grade };
       });
       setRowOverride((prev) => ({ ...prev, [r]: grade }));
@@ -94,15 +103,15 @@ export function SeatLayoutBuilder({
 
   const grid = useMemo(
     () =>
-      value?.layout?.map((row, r) =>
+      value.layout.map((row, r) =>
         row.map((id, c) => ({
           id,
-          grade: value.seat[id ?? reactId]?.grade as SeatGrade,
+          grade: id ? (value.seat[id].grade as SeatGrade) : "A",
           r,
           c,
         }))
       ),
-    [value, reactId]
+    [value]
   );
 
   return (
@@ -113,7 +122,9 @@ export function SeatLayoutBuilder({
             type="number"
             min={1}
             value={rowInput}
-            onChange={(e) => setRowInput(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setRowInput(e.target.value)
+            }
             className="w-20"
           />
           <span className="text-sm">rows ×</span>
@@ -121,77 +132,68 @@ export function SeatLayoutBuilder({
             type="number"
             min={1}
             value={colInput}
-            onChange={(e) => setColInput(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setColInput(e.target.value)
+            }
             className="w-20"
           />
           <span className="text-sm">cols</span>
         </div>
+
         <Badge variant="outline">
           {seatSelected}/{seatCount}
         </Badge>
-        {overLimit && (
-          <p className="text-destructive text-xs">
-            격자 크기가 총 좌석 수를 초과했습니다.
-          </p>
-        )}
       </div>
 
-      {!overLimit && (
-        <div className="overflow-auto border rounded">
-          <table className="border-collapse select-none">
-            <tbody>
-              {grid.map((row, r) => (
-                <tr key={r}>
-                  <td className="w-10 h-10 border bg-muted/20 p-0 text-center">
-                    <Select
-                      value={rowOverride[r]}
-                      onValueChange={(g) => setRowGrade(r, g as SeatGrade)}
-                    >
-                      <SelectTrigger className="h-10 w-10 text-xs p-0 leading-none">
-                        <SelectValue>
-                          {rowOverride[r]
-                            ? gradeShort[rowOverride[r]]
-                            : letter(r)}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent side="top">
-                        {gradeOptions.map((g) => (
-                          <SelectItem
-                            key={g}
-                            value={g}
-                            className="flex items-center gap-1 text-xs"
-                          >
-                            <span className="font-mono text-sm w-4 inline-block text-center">
-                              {gradeShort[g]}
-                            </span>
-                            {g}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </td>
-                  {row.map((cell) => (
-                    <td
-                      key={`${cell.r}-${cell.c}`}
-                      className="w-10 h-10 border text-center p-0"
-                    >
+      <div className="overflow-auto rounded border">
+        <table className="select-none border-collapse">
+          <tbody>
+            {grid.map((row, r) => (
+              <tr key={r}>
+                <td className="h-10 w-10 border bg-muted/20 p-0 text-center">
+                  <Select
+                    value={rowOverride[r]}
+                    onValueChange={(g) => setRowGrade(r, g as SeatGrade)}
+                  >
+                    <SelectTrigger className="h-10 w-10 p-0 text-xs leading-none">
+                      <SelectValue>
+                        {rowOverride[r]
+                          ? gradeShort[rowOverride[r]]
+                          : letter(r)}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent side="top">
+                      {gradeOptions.map((g) => (
+                        <SelectItem key={g} value={g} className="text-xs">
+                          <span className="inline-block w-4 text-center font-mono text-sm">
+                            {gradeShort[g]}
+                          </span>
+                          {g}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </td>
+
+                {row.map((cell) => (
+                  <td
+                    key={`${cell.r}-${cell.c}`}
+                    className="h-10 w-10 border p-0"
+                  >
+                    {cell.id ? (
                       <Select
                         value={cell.grade}
                         onValueChange={(g) =>
-                          changeGrade(cell.id ?? reactId, g as SeatGrade)
+                          changeGrade(cell.id!, g as SeatGrade)
                         }
                       >
-                        <SelectTrigger className="h-10 w-10 text-xs p-0 leading-none">
+                        <SelectTrigger className="h-10 w-10 p-0 text-xs leading-none">
                           <SelectValue>{gradeShort[cell.grade]}</SelectValue>
                         </SelectTrigger>
                         <SelectContent side="top">
                           {gradeOptions.map((g) => (
-                            <SelectItem
-                              key={g}
-                              value={g}
-                              className="flex items-center gap-1 text-xs"
-                            >
-                              <span className="font-mono text-sm w-4 inline-block text-center">
+                            <SelectItem key={g} value={g} className="text-xs">
+                              <span className="inline-block w-4 text-center font-mono text-sm">
                                 {gradeShort[g]}
                               </span>
                               {g}
@@ -199,14 +201,16 @@ export function SeatLayoutBuilder({
                           ))}
                         </SelectContent>
                       </Select>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                    ) : (
+                      <div className="h-full w-full bg-muted/20" />
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <div className="flex flex-wrap gap-2">
         {gradeOptions.map((g) => (
@@ -215,7 +219,7 @@ export function SeatLayoutBuilder({
             variant="outline"
             className="flex items-center gap-1 text-xs"
           >
-            <span className="font-mono text-sm w-4 inline-block text-center">
+            <span className="inline-block w-4 text-center font-mono text-sm">
               {gradeShort[g]}
             </span>
             {g}
@@ -224,4 +228,4 @@ export function SeatLayoutBuilder({
       </div>
     </div>
   );
-}
+};

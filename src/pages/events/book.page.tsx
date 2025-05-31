@@ -17,6 +17,7 @@ import { SeatGrade } from "@/schemas/seat.schema";
 import { toast } from "sonner";
 import { subscribeWaitingTickets } from "@/services/ticket.service";
 import { usePaymentStore } from "@/store/payment.store";
+import { QueueIndicator } from "@/components/book/queue-indicator";
 
 const EventBookPage = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -36,13 +37,13 @@ const EventBookPage = () => {
   });
 
   const [entryToken, setEntryToken] = useState<string | null>(null);
-  const [, setQueueStatus] = useState<
+  const [queueStatus, setQueueStatus] = useState<
     "IN_ENTRY" | "IN_PROGRESS" | "EXPIRED" | null
   >(null);
   const [queueOrder, setQueueOrder] = useState<number | null>(null);
 
-  const waiting = entryToken === null;
-  const ready = entryToken !== null;
+  const waiting = queueStatus === null || queueStatus === "IN_ENTRY";
+  const ready = queueStatus === "IN_PROGRESS";
 
   const sseCloseRef = useRef<() => void | undefined>(undefined);
 
@@ -51,7 +52,7 @@ const EventBookPage = () => {
     const close = subscribeWaitingTickets(eventId, (p) => {
       setEntryToken(p.token);
       setQueueStatus(p.status);
-      setQueueOrder(p.userId);
+      setQueueOrder(p.order);
     });
 
     sseCloseRef.current = close;
@@ -135,7 +136,8 @@ const EventBookPage = () => {
     reserveSeats({ seatList, token: entryToken });
   };
 
-  const canPay = ready && selected.length > 0 && !isPending;
+  const canPay =
+    queueStatus === "IN_PROGRESS" && selected.length > 0 && !isPending;
 
   if (isLoading)
     return (
@@ -174,7 +176,10 @@ const EventBookPage = () => {
       >
         <ArrowLeft size={16} /> 뒤로
       </Button>
-      <h1 className="text-2xl font-bold">좌석 선택</h1>
+      <h1 className="text-2xl font-bold flex items-center gap-3">
+        좌석 선택
+        {queueStatus && <QueueIndicator status={queueStatus} />}
+      </h1>
       <p className="text-sm text-muted-foreground">
         {format(event.information.eventStart, "yyyy년 MM월 dd일 HH:mm", {
           locale: ko,
@@ -189,6 +194,15 @@ const EventBookPage = () => {
           maxSelectable={4}
           onChange={setSelected}
         />
+      ) : queueStatus === "EXPIRED" ? (
+        <div className="flex flex-col items-center gap-2 py-20">
+          <p className="text-destructive text-lg font-medium">
+            대기 시간이 만료되었습니다.
+          </p>
+          <Button variant="outline" onClick={() => nav(0)}>
+            다시 시도
+          </Button>
+        </div>
       ) : (
         <div className="flex flex-col items-center gap-2 py-20">
           <p className="text-lg font-medium">대기열에 참여 중입니다…</p>
@@ -251,9 +265,11 @@ const EventBookPage = () => {
           ? "좌석 확인 중…"
           : waiting
           ? "대기 중…"
-          : canPay
-          ? "결제하기"
-          : "좌석 선택 필요"}
+          : queueStatus === "EXPIRED"
+          ? "세션 만료"
+          : selected.length === 0
+          ? "좌석 선택 필요"
+          : "결제하기"}
       </Button>
     </motion.section>
   );
