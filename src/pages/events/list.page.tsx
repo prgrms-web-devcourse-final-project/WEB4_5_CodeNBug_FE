@@ -12,7 +12,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,7 +20,6 @@ import { Input } from "@/components/ui/input";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { EventCard } from "@/components/event/event-card";
 
-const DEFAULT_RANGE = { min: 0, max: 999999 };
 const CATEGORY_OPTIONS: EventCategory[] = [
   "CONCERT",
   "MUSICAL",
@@ -42,25 +41,25 @@ export const EventListPage = () => {
     const one = params.get("category");
     return one ? [one] : [];
   }, [params]);
-
-  const [range, setRange] = useState(DEFAULT_RANGE);
   const [categories, setCategories] = useState<string[]>(initCats);
-  const [keyword, setKeyword] = useState(() => {
-    return (params.get("keyword") ?? "").toLowerCase();
-  });
+  const dCats = useDebouncedValue(categories, 200);
 
-  const dRange = useDeferredValue(range);
-  const dCats = useDeferredValue(categories);
+  const [keyword, setKeyword] = useState(() =>
+    (params.get("keyword") ?? "").toLowerCase()
+  );
   const dKey = useDebouncedValue(keyword, 500);
+
+  const [rawRange, setRawRange] = useState<number[]>([0, 999_999]);
+  const [range, setRange] = useState<number[]>(rawRange);
 
   const qc = useQueryClient();
   const { data, isLoading, isError, isFetching, error } = useQuery({
-    queryKey: ["events", pageIdx, size, dRange, dCats, dKey],
+    queryKey: ["events", pageIdx, size, range, dCats, dKey],
     queryFn: () =>
       getAllEvents({
         page: pageIdx,
         size,
-        costRange: dRange,
+        costRange: { min: range[0], max: range[1] },
         eventCategoryList: dCats,
         keyword: dKey,
       }),
@@ -68,17 +67,14 @@ export const EventListPage = () => {
     placeholderData: (old) => old,
   });
 
-  const items: EventListItem[] = data?.data.data?.content ?? [];
-  const totalPages = data?.totalPages ?? uiPage;
-
   if (pageIdx < (data?.totalPages ?? uiPage) - 1) {
     qc.prefetchQuery({
-      queryKey: ["events", pageIdx + 1, size, dRange, dCats, dKey],
+      queryKey: ["events", pageIdx + 1, size, range, dCats, dKey],
       queryFn: () =>
         getAllEvents({
           page: pageIdx + 1,
           size,
-          costRange: dRange,
+          costRange: { min: range[0], max: range[1] },
           eventCategoryList: dCats,
           keyword: dKey,
         }),
@@ -86,35 +82,33 @@ export const EventListPage = () => {
     });
   }
 
-  const goPage = (p: number) =>
-    setParams({ page: String(p), size: String(size) });
-
-  useEffect(() => {
+  const syncKeyword = () => {
     const next = new URLSearchParams(params);
     if (dKey) next.set("keyword", dKey);
     else next.delete("keyword");
-
-    if (next.toString() !== params.toString()) {
+    if (next.toString() !== params.toString())
       setParams(next, { replace: true });
-    }
-  }, [dKey]);
-
-  useEffect(() => {
+  };
+  const syncCategories = () => {
     const next = new URLSearchParams(params);
     next.delete("category");
     dCats.forEach((c) => next.append("category", c));
     if (next.toString() !== params.toString())
       setParams(next, { replace: true });
-  }, [dCats]);
+  };
+
+  useEffect(syncKeyword, [dKey]);
+  useEffect(syncCategories, [dCats]);
 
   useEffect(() => {
-    if (uiPage !== 1) {
+    if (uiPage !== 1)
       setParams({ page: "1", size: String(size) }, { replace: true });
-    }
-  }, [dRange, dCats, dKey]);
+  }, [range, dCats, dKey]);
+
+  const items: EventListItem[] = data?.data.data?.content ?? [];
+  const totalPages = data?.totalPages ?? uiPage;
 
   if (isLoading && !data) return <SkeletonGrid count={size} />;
-
   if (isError)
     return (
       <div className="container mx-auto flex flex-col items-center justify-center px-4 py-16">
@@ -129,9 +123,9 @@ export const EventListPage = () => {
 
   return (
     <section className="container mx-auto px-4 py-8">
-      <div className="mb-6 rounded-lg border p-4 space-y-6">
+      <div className="mb-6 space-y-6 rounded-lg border p-4">
         <div>
-          <h2 className="text-sm font-medium mb-2">검색</h2>
+          <h2 className="mb-2 text-sm font-medium">검색</h2>
           <Input
             placeholder="공연명, 장소 등을 검색하세요"
             value={keyword}
@@ -140,17 +134,20 @@ export const EventListPage = () => {
         </div>
 
         <Separator />
+
         <div>
-          <h2 className="text-sm font-medium mb-2">가격(₩)</h2>
+          <h2 className="mb-2 text-sm font-medium">가격(₩)</h2>
           <Slider
-            value={[range.min, range.max]}
-            step={1000}
+            value={rawRange}
+            step={1_000}
             min={0}
-            max={999999}
-            onValueChange={([min, max]) => setRange({ min, max })}
+            max={999_999}
+            onValueChange={setRawRange}
+            onValueCommit={(v) => setRange(v)}
           />
-          <p className="text-xs text-muted-foreground mt-1">
-            {range.min.toLocaleString()}원 ~ {range.max.toLocaleString()}원
+          <p className="mt-1 text-xs text-muted-foreground">
+            {rawRange[0].toLocaleString()}원&nbsp;~&nbsp;
+            {rawRange[1].toLocaleString()}원
           </p>
         </div>
 
@@ -201,46 +198,54 @@ export const EventListPage = () => {
         </AnimatePresence>
 
         <div className="flex items-center justify-center gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
+          <PageButton
+            icon={<ChevronsLeft className="size-4" />}
             disabled={uiPage === 1 || isFetching}
-            onClick={() => goPage(1)}
-          >
-            <ChevronsLeft className="size-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
+            onClick={() => setParams({ page: "1", size: String(size) })}
+          />
+          <PageButton
+            icon={<ChevronLeft className="size-4" />}
             disabled={uiPage === 1 || isFetching}
-            onClick={() => goPage(uiPage - 1)}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <span className="w-16 text-center tabular-nums text-sm">
+            onClick={() =>
+              setParams({ page: String(uiPage - 1), size: String(size) })
+            }
+          />
+          <span className="w-16 tabular-nums text-center text-sm">
             {uiPage} / {totalPages}
           </span>
-          <Button
-            size="sm"
-            variant="secondary"
+          <PageButton
+            icon={<ChevronRight className="size-4" />}
             disabled={uiPage >= totalPages || isFetching}
-            onClick={() => goPage(uiPage + 1)}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
+            onClick={() =>
+              setParams({ page: String(uiPage + 1), size: String(size) })
+            }
+          />
+          <PageButton
+            icon={<ChevronsRight className="size-4" />}
             disabled={uiPage >= totalPages || isFetching}
-            onClick={() => goPage(totalPages)}
-          >
-            <ChevronsRight className="size-4" />
-          </Button>
+            onClick={() =>
+              setParams({ page: String(totalPages), size: String(size) })
+            }
+          />
         </div>
       </div>
     </section>
   );
 };
+
+const PageButton = ({
+  icon,
+  disabled,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  disabled: boolean;
+  onClick: () => void;
+}) => (
+  <Button size="sm" variant="secondary" disabled={disabled} onClick={onClick}>
+    {icon}
+  </Button>
+);
 
 const SkeletonGrid = ({ count }: { count: number }) => (
   <section className="container mx-auto grid grid-cols-1 gap-6 px-4 py-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
